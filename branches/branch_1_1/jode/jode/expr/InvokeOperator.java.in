@@ -1058,28 +1058,17 @@ public final class InvokeOperator extends Operator
 		ThisOperator thisOp = (ThisOperator) subExpressions[0];
 		Scope scope = writer.getScope(thisOp.getClassInfo(),
 					      Scope.CLASSSCOPE);
-		if (writer.conflicts(methodName, scope, Scope.METHODNAME)) {
+		if (writer.conflicts(methodName, scope, Scope.METHODNAME)
+		    || (/* This field is inherited from the parent of
+			 * an outer class, or it is inherited from the
+			 * parent of this class and there is a conflicting
+			 * field in some outer class.
+			 */
+			getMethodAnalyzer() == null 
+			&& (!isThis() || 
+			    writer.conflicts(methodName, null,
+					     Scope.NOSUPERMETHODNAME)))) {
 		    thisOp.dumpExpression(writer, 950);
-		    writer.breakOp();
-		    writer.print(".");
-		} else if (/* This is a inherited field conflicting
-			    * with a field name in some outer class.
-			    */
-			   getMethodAnalyzer() == null 
-			   && writer.conflicts(methodName, null,
-					       Scope.NOSUPERMETHODNAME)) {
-		    ClassAnalyzer ana = methodAnalyzer.getClassAnalyzer();
-		    while (ana.getParent() instanceof ClassAnalyzer
-			   && ana != scope)
-			ana = (ClassAnalyzer) ana.getParent();
-		    if (ana == scope) {
-			// For a simple outer class we can say this
-			writer.print("this");
-		    } else {
-			// For a class that owns a method that owns
-			// us, we have to give the full class name
-			thisOp.dumpExpression(writer, 950);
-		    }
 		    writer.breakOp();
 		    writer.print(".");
 		}
