@@ -117,6 +117,8 @@ public class SyntheticAnalyzer implements Opcodes {
 	int i = 0;
 	for (Iterator iter = bytecode.getInstructions().iterator(); iter.hasNext(); i++) {
 	    Instruction instr = (Instruction) iter.next();
+	    while (instr.getOpcode() == opc_nop && iter.hasNext())
+		instr = (Instruction) iter.next();
 	    if (i == getClassOpcodes.length
 		|| instr.getOpcode() != getClassOpcodes[i])
 		return false;
@@ -152,6 +154,8 @@ public class SyntheticAnalyzer implements Opcodes {
 	boolean dupSeen = false;
 
 	Instruction instr = (Instruction) iter.next();
+	while (instr.getOpcode() == opc_nop && iter.hasNext())
+	    instr = (Instruction) iter.next();
 	if (instr.getOpcode() == opc_getstatic) {
 	    Reference ref = instr.getReference();
 	    ClassInfo refClazz = TypeSignature.getClassInfo(ref.getClazz());
@@ -162,6 +166,8 @@ public class SyntheticAnalyzer implements Opcodes {
 	    if ((refField.getModifiers() & modifierMask) != Modifier.STATIC)
 		return false;
 	    instr = (Instruction) iter.next();
+	    while (instr.getOpcode() == opc_nop && iter.hasNext())
+		instr = (Instruction) iter.next();
 	    if (instr.getOpcode() < opc_ireturn
 		|| instr.getOpcode() > opc_areturn)
 		return false;
@@ -178,12 +184,16 @@ public class SyntheticAnalyzer implements Opcodes {
 	    slot += (instr.getOpcode() == opc_lload 
 		     || instr.getOpcode() == opc_dload) ? 2 : 1;
 	    instr = (Instruction) iter.next();
+	    while (instr.getOpcode() == opc_nop && iter.hasNext())
+		instr = (Instruction) iter.next();
 	}
 	if (instr.getOpcode() == (opc_dup - 3) + 3 * slot) {
 	    /* This is probably a opc_dup or opc_dup2, 
 	     * preceding a opc_putstatic 
 	     */
 	    instr = (Instruction) iter.next();
+	    while (instr.getOpcode() == opc_nop && iter.hasNext())
+		instr = (Instruction) iter.next();
 	    if (instr.getOpcode() != opc_putstatic)
 		return false;
 	    dupSeen = true;
@@ -201,6 +211,8 @@ public class SyntheticAnalyzer implements Opcodes {
 	    if ((refField.getModifiers() & modifierMask) != Modifier.STATIC)
 		return false;
 	    instr = (Instruction) iter.next();
+	    while (instr.getOpcode() == opc_nop && iter.hasNext())
+		instr = (Instruction) iter.next();
 	    if (dupSeen) {
 		if (instr.getOpcode() < opc_ireturn
 		    || instr.getOpcode() > opc_areturn)
@@ -226,6 +238,8 @@ public class SyntheticAnalyzer implements Opcodes {
 		|| refType.getParameterTypes().length != params)
 		return false;
 	    instr = (Instruction) iter.next();
+	    while (instr.getOpcode() == opc_nop && iter.hasNext())
+		instr = (Instruction) iter.next();
 	    if (refType.getReturnType() == Type.tVoid) {
 		if (instr.getOpcode() != opc_return)
 		    return false;
@@ -258,9 +272,13 @@ public class SyntheticAnalyzer implements Opcodes {
 
 	Iterator iter = bytecode.getInstructions().iterator();
 	Instruction instr = (Instruction) iter.next();
+	while (instr.getOpcode() == opc_nop && iter.hasNext())
+	    instr = (Instruction) iter.next();
 	if (instr.getOpcode() != opc_aload || instr.getLocalSlot() != 0)
 	    return false;
 	instr = (Instruction) iter.next();
+	while (instr.getOpcode() == opc_nop && iter.hasNext())
+	    instr = (Instruction) iter.next();
 
 	if (instr.getOpcode() == opc_getfield) {
 	    Reference ref = instr.getReference();
@@ -272,6 +290,8 @@ public class SyntheticAnalyzer implements Opcodes {
 	    if ((refField.getModifiers() & modifierMask) != 0)
 		return false;
 	    instr = (Instruction) iter.next();
+	    while (instr.getOpcode() == opc_nop && iter.hasNext())
+		instr = (Instruction) iter.next();
 	    if (instr.getOpcode() < opc_ireturn
 		|| instr.getOpcode() > opc_areturn)
 		return false;
@@ -288,12 +308,16 @@ public class SyntheticAnalyzer implements Opcodes {
 	    slot += (instr.getOpcode() == opc_lload 
 		     || instr.getOpcode() == opc_dload) ? 2 : 1;
 	    instr = (Instruction) iter.next();
+	    while (instr.getOpcode() == opc_nop && iter.hasNext())
+		instr = (Instruction) iter.next();
 	}
 	if (instr.getOpcode() == (opc_dup_x1 - 6) + 3 * slot) {
 	    /* This is probably a opc_dup_x1 or opc_dup2_x1, 
 	     * preceding a opc_putfield 
 	     */
 	    instr = (Instruction) iter.next();
+	    while (instr.getOpcode() == opc_nop && iter.hasNext())
+		instr = (Instruction) iter.next();
 	    if (instr.getOpcode() != opc_putfield)
 		return false;
 	    dupSeen = true;
@@ -312,6 +336,8 @@ public class SyntheticAnalyzer implements Opcodes {
 		return false;
 
 	    instr = (Instruction) iter.next();
+	    while (instr.getOpcode() == opc_nop && iter.hasNext())
+		instr = (Instruction) iter.next();
 	    if (dupSeen) {
 		if (instr.getOpcode() < opc_ireturn
 		    || instr.getOpcode() > opc_areturn)
@@ -337,6 +363,8 @@ public class SyntheticAnalyzer implements Opcodes {
 		|| refType.getParameterTypes().length != params)
 		return false;
 	    instr = (Instruction) iter.next();
+	    while (instr.getOpcode() == opc_nop && iter.hasNext())
+		instr = (Instruction) iter.next();
 	    if (refType.getReturnType() == Type.tVoid) {
 		if (instr.getOpcode() != opc_return)
 		    return false;
@@ -365,6 +393,8 @@ public class SyntheticAnalyzer implements Opcodes {
 	Iterator iter = bytecode.getInstructions().iterator();
 
 	Instruction instr = (Instruction) iter.next();
+	while (instr.getOpcode() == opc_nop && iter.hasNext())
+	    instr = (Instruction) iter.next();
 	int params = 0, slot = 0;
 	while (instr.getOpcode() >= opc_iload
 	       && instr.getOpcode() <= opc_aload) {

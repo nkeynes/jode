@@ -1,3 +1,18 @@
+2001-06-15  Jochen Hoenicke  <jochen@gnu.org>
+
+	* jode/jvm/SyntheticAnalyzer.java.in:
+	(checkGetClass): Ignore nop opcodes.
+	(checkStaticAccess): Likewise.
+	(checkAccess): Likewise.
+	(checkConstructorAccess): Likewise.
+
+	* jode/flow/TransformConstructors.java (Constructor): Ignore
+	OuterValues for static constructor.
+
+	* jode/expr/NewArrayOperator.java (dumpExpression): Added
+	a missing breakOp.
+	* jode/expr/CompareToIntOperator.java (dumpExpression): Likewise.
+
 2001-06-01  Jochen Hoenicke  <jochen@gnu.org>
 
 	* jode/obfuscator/modules/ConstantAnalyzer.java.in: 

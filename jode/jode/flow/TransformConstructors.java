@@ -105,7 +105,8 @@ public class TransformConstructors {
 	this.clazzAnalyzer = clazzAnalyzer;
 	this.isStatic = isStatic;
 	this.cons = cons;
-	this.outerValues = clazzAnalyzer.getOuterValues();
+	if (!isStatic)
+	    this.outerValues = clazzAnalyzer.getOuterValues();
 	lookForConstructorCall();
     }
     
