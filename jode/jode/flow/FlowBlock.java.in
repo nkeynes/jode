@@ -1,4 +1,4 @@
-/* FlowBlock Copyright (C) 1998-1999 Jochen Hoenicke.
+/* FlowBlock Copyright (C) 1998-2001 Jochen Hoenicke.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -748,7 +748,8 @@ public class FlowBlock {
 
         StructuredBlock last = lastModified;
         while (last.outer instanceof SequentialBlock
-               || last.outer instanceof TryBlock)
+               || last.outer instanceof TryBlock
+               || last.outer instanceof FinallyBlock)
             last = last.outer;
         if (last.outer != null)
             throw new AssertError("Inconsistency");
