@@ -215,9 +215,14 @@ public class ConstantRuntimeEnvironment extends SimpleRuntimeEnvironment {
     }
 
     private Interpreter interpreter;
+    private Identifier currentFieldListener;
     
     public ConstantRuntimeEnvironment() {
 	interpreter = new Interpreter(this);
+    }
+
+    public void setFieldListener(Identifier fl) {
+	currentFieldListener = fl;
     }
 
     public static Object getDefaultValue(String typeSig) {
@@ -247,6 +252,8 @@ public class ConstantRuntimeEnvironment extends SimpleRuntimeEnvironment {
 	    = (FieldIdentifier) Main.getClassBundle().getIdentifier(ref);
 	if (fi != null && !fi.isNotConstant()) {
 	    Object result = fi.getConstant();
+	    if (currentFieldListener != null)
+		fi.addFieldListener(currentFieldListener);
 	    if (result == null)
 		result = getDefaultValue(ref.getType());
 	    return result;

@@ -1,3 +1,15 @@
+2001-06-01  Jochen Hoenicke  <jochen@gnu.org>
+
+	* jode/obfuscator/modules/ConstantAnalyzer.java.in: 
+	(analyzeCode): set field listener of RuntimeEnvironment.
+	(replaceWith): Fixed the invoke_xxx case.
+
+	* jode/obfuscator/ConstantRuntimeEnvironment.java.in:
+	(getField): add current field listener to field if constant value
+	was used.
+	(currentFieldAnalyzer): New field.
+	(setFieldAnalyzer): New method.
+
 2001-05-27  Jochen Hoenicke  <jochen@gnu.org>
 
 	* configure.in: Set version to 1.1.

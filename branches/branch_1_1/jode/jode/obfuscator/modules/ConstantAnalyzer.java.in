@@ -602,7 +602,7 @@ public class ConstantAnalyzer implements Opcodes, CodeAnalyzer {
     public void handleOpcode(StackLocalInfo info, Identifier fieldListener) {
 	Instruction instr = info.instr;
 	info.constInfo = unknownConstInfo;
-	
+
 	int opcode = instr.getOpcode();
 	Handler[] handlers = bytecode.getExceptionHandlers();
 	for (int i=0; i< handlers.length; i++) {
@@ -1470,12 +1470,14 @@ public class ConstantAnalyzer implements Opcodes, CodeAnalyzer {
 	firstInfo.instr = (Instruction) bytecode.getInstructions().get(0);
 	firstInfo.instr.setTmpInfo(firstInfo);
 	firstInfo.enqueue();
+	runtime.setFieldListener(methodIdent);
 	while (modifiedQueue.first != null) {
 	    StackLocalInfo info = modifiedQueue.first;
 	    modifiedQueue.first = info.nextOnQueue;
 	    info.nextOnQueue = null;
 	    handleOpcode(info, methodIdent);
 	}
+	runtime.setFieldListener(null);
 
 	Handler[] handlers = bytecode.getExceptionHandlers();
 	for (int i=0; i< handlers.length; i++) {
@@ -1577,12 +1579,17 @@ public class ConstantAnalyzer implements Opcodes, CodeAnalyzer {
 	    String[] pt = TypeSignature.getParameterTypes(ref.getType());
 	    int len = pt.length;
 
-	    if (len > 0)
+	    if (len > 0) {
 		iter.set(new Instruction(TypeSignature.getTypeSize(pt[--len])
 					 + opc_pop - 1));
-	    else if (instr.getOpcode() != opc_invokestatic)
+		for (int i = len - 1; i >= 0; i--)
+		    iter.add(new Instruction(TypeSignature.getTypeSize(pt[i])
+					     + opc_pop - 1));
+		if (instr.getOpcode() != opc_invokestatic)
+		    iter.add(new Instruction(opc_pop));
+	    } else if (instr.getOpcode() != opc_invokestatic) {
 		iter.set(new Instruction(opc_pop));
-	    else {
+	    } else {
 		if (replacement == null)
 		    iter.remove();
 		else
@@ -1590,9 +1597,6 @@ public class ConstantAnalyzer implements Opcodes, CodeAnalyzer {
 		return;
 	    }
 	    
-	    for (int i = len - 1; i >= 0; i++)
-		iter.add(new Instruction(TypeSignature.getTypeSize(pt[i])
-					 + opc_pop - 1));
 	}
 	}
 	if (replacement != null)
