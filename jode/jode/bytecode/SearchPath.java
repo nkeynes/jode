@@ -279,7 +279,7 @@ public class SearchPath  {
 		    } catch (SecurityException ex) {
 			GlobalOptions.err.println
 			    ("Warning: Security exception while accessing "
-			     +bases[i]+".");
+			     + bases[i] + ".");
 		    }
 		} catch (MalformedURLException ex) {
 		    /* disable entry */
@@ -309,6 +309,10 @@ public class SearchPath  {
     }
 
     public boolean exists(String filename) {
+	String localFileName = 
+	    (java.io.File.separatorChar != '/')
+	    ? filename.replace('/', java.io.File.separatorChar)
+	    : filename;
         for (int i=0; i<dirs.length; i++) {
 	    if (zipEntries[i] != null) {
 		if (zipEntries[i].get(filename) != null)
@@ -347,11 +351,8 @@ public class SearchPath  {
                 if (ze != null)
                     return true;
             } else {
-                if (java.io.File.separatorChar != '/')
-                    filename = filename
-                        .replace('/', java.io.File.separatorChar);
 		try {
-		    File f = new File(dirs[i], filename);
+		    File f = new File(dirs[i], localFileName);
 		    if (f.exists())
 			return true;
 		} catch (SecurityException ex) {
@@ -369,6 +370,10 @@ public class SearchPath  {
      * @return An InputStream for the file.
      */
     public InputStream getFile(String filename) throws IOException {
+	String localFileName = 
+	    (java.io.File.separatorChar != '/')
+	    ? filename.replace('/', java.io.File.separatorChar)
+	    : filename;
         for (int i=0; i<dirs.length; i++) {
 	    if (urlzips[i] != null) {
 		ZipInputStream zis = new ZipInputStream
@@ -413,8 +418,8 @@ public class SearchPath  {
 		    return conn.getInputStream();
 		} catch (SecurityException ex) {
 		    GlobalOptions.err.println("Warning: SecurityException"
-					   +" while accessing "
-					   +bases[i]+filename);
+					      + " while accessing "
+					      + bases[i] + filename);
 		    ex.printStackTrace(GlobalOptions.err);
 		    /* ignore and take next element */
 		} catch (FileNotFoundException ex) {
@@ -431,17 +436,14 @@ public class SearchPath  {
                 if (ze != null)
                     return zips[i].getInputStream(ze);
             } else {
-                if (java.io.File.separatorChar != '/')
-                    filename = filename
-                        .replace('/', java.io.File.separatorChar);
 		try {
-		    File f = new File(dirs[i], filename);
+		    File f = new File(dirs[i], localFileName);
 		    if (f.exists())
 			return new FileInputStream(f);
 		} catch (SecurityException ex) {
 		    GlobalOptions.err.println("Warning: SecurityException"
-					   +" while accessing "
-					   +dirs[i]+filename);
+					      + " while accessing "
+					      + dirs[i] + localFileName);
 		    /* ignore and take next element */
 		}
             }
@@ -457,6 +459,10 @@ public class SearchPath  {
      * @return true, if filename exists and is a directory, false otherwise.
      */
     public boolean isDirectory(String filename) {
+	String localFileName = 
+	    (java.io.File.separatorChar != '/')
+	    ? filename.replace('/', java.io.File.separatorChar)
+	    : filename;
         for (int i=0; i<dirs.length; i++) {
             if (dirs[i] == null)
                 continue;
@@ -467,17 +473,14 @@ public class SearchPath  {
 		if (zipEntries[i].containsKey(filename))
 		    return true;
             } else {
-                if (java.io.File.separatorChar != '/')
-                    filename = filename
-                        .replace('/', java.io.File.separatorChar);
 		try {
-		    File f = new File(dirs[i], filename);
+		    File f = new File(dirs[i], localFileName);
 		    if (f.exists())
 			return f.isDirectory();
 		} catch (SecurityException ex) {
 		    GlobalOptions.err.println("Warning: SecurityException"
-					   +" while accessing "
-					   +dirs[i]+filename);
+					      + " while accessing "
+					      + dirs[i] + localFileName);
 		}
             }
         }
@@ -543,11 +546,13 @@ public class SearchPath  {
 			    if (f.exists() && f.isDirectory()) {
 				currentDir = f;
 				files = f.list();
+				fileNr = 0;
 			    }
 			} catch (SecurityException ex) {
-			    GlobalOptions.err.println("Warning: SecurityException"
-						   +" while accessing "
-						   +dirs[pathNr]+localDirName);
+			    GlobalOptions.err.println
+			        ("Warning: SecurityException"
+				 + " while accessing "
+				 + dirs[pathNr] + localDirName);
 			    /* ignore and take next element */
 			}
                     }
