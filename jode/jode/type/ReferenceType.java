@@ -20,15 +20,12 @@
 package jode.type;
 import jode.GlobalOptions;
 import jode.bytecode.ClassInfo;
-import java.io.IOException;
-import java.util.Stack;
 import java.util.Vector;
-import java.util.Enumeration;
+import java.util.Stack;
 
 /**
  * This is an abstrace super class of all reference types.  Reference
- * types are NullType, MultiClassType, and ClassType with its sub types
- * ClassInfoType, SystemClassType, and ArrayType. <p>
+ * types are ClassInterfacesType, ArrayType and NullType. <p>
  *
  * To do intersection on range types, the reference types need three
  * more operations: specialization, generalization and
@@ -60,7 +57,6 @@ public abstract class ReferenceType extends Type {
      * @param type the other type.
      * @return the specialized type.  */
     public abstract Type getSpecializedType(Type type);
-
     /**
      * Returns the generalized type set of this and type.  The result
      * should be a type set, so that every type, is extended/implemented
@@ -70,49 +66,6 @@ public abstract class ReferenceType extends Type {
      * @return the generalized type
      */
     public abstract Type getGeneralizedType(Type type);
-
-    public Type findCommonClassTypes(Stack otherTypes) {
-	/* Consider each class and interface implemented by this.
-	 * If any clazz or interface in other implements it, add it to
-	 * the classes vector.  Otherwise consider all sub interfaces.  
-	 */
-        Vector classes = new Vector();
-
-    type_loop:
-        while (!otherTypes.isEmpty()) {
-            ClassType type = (ClassType) otherTypes.pop();
-	    if (type.equals(tObject))
-		/* tObject is always implied. */
-		continue type_loop;
-
-	    for (Enumeration enum = classes.elements(); 
-		 enum.hasMoreElements(); ) {
-		if (type.isSubTypeOf((Type) enum.nextElement()))
-		    /* We can skip this, as another class already
-		     * implies it.  */
-		    continue type_loop;
-	    }
-	    
-            if (type.isSubTypeOf(this)) {
-		classes.addElement(type);
-                continue type_loop;
-            }
-
-            /* This clazz/interface is not implemented by this object.
-             * Try its parents now.
-             */
-            ClassType ifaces[] = type.getInterfaces();
-            for (int i=0; i < ifaces.length; i++)
-                otherTypes.push(ifaces[i]);
-	    ClassType superClass = type.getSuperClass();
-	    if (superClass != null)
-		otherTypes.push(superClass);
-        }
-        ClassType[] classArray = new ClassType[classes.size()];
-        classes.copyInto(classArray);
-        return MultiClassType.create(classArray);
-    }
-
     /**
      * Creates a range type set of this and bottom.  The resulting type set
      * contains all types, that extend all types in bottom and are extended
@@ -130,37 +83,26 @@ public abstract class ReferenceType extends Type {
      * 
      * This is a useful function for generalizing/specializing interface
      * types or arrays.
-     *
-     * If it can't find all classes in the hierarchy, it will catch this
-     * error and return false, i.e. it assumes that the class doesn't
-     * implement all interfaces.
-     *
      * @param clazz The clazz, can be null.
      * @param ifaces The ifaces.
      * @param otherifaces The other ifaces, that must be implemented.
-     * @return true, if all otherIfaces are implemented, false if unsure or
-     * if not all otherIfaces are implemented.
+     * @return true, if all otherIfaces are implemented.
      */
     protected static boolean implementsAllIfaces(ClassInfo clazz,
 						 ClassInfo[] ifaces,
 						 ClassInfo[] otherIfaces) {
-	try {
-	big:
-	    for (int i=0; i < otherIfaces.length; i++) {
-		ClassInfo iface = otherIfaces[i];
-		if (clazz != null && iface.implementedBy(clazz))
-		    continue big;
-		for (int j=0; j < ifaces.length; j++) {
-		    if (iface.implementedBy(ifaces[j]))
+    big:
+        for (int i=0; i < otherIfaces.length; i++) {
+            ClassInfo iface = otherIfaces[i];
+            if (clazz != null && iface.implementedBy(clazz))
+                continue big;
+            for (int j=0; j < ifaces.length; j++) {
+                if (iface.implementedBy(ifaces[j]))
                         continue big;
-		}
-		return false;
-	    }
-	    return true;
-	} catch (IOException ex) {
-	    /* Class Hierarchy can't be fully gotten. */
-	    return false;
-	}
+            }
+            return false;
+        }
+        return true;
     }
 
     public Type getSuperType() {
@@ -194,7 +136,7 @@ public abstract class ReferenceType extends Type {
 
         if ((GlobalOptions.debuggingFlags & GlobalOptions.DEBUG_TYPES) != 0) {
 	    GlobalOptions.err.println("intersecting "+ this +" and "+ type + 
-				      " to " + result);
+                                   " to " + result);
 	}	    
         return result;
     }

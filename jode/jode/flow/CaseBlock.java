@@ -19,6 +19,7 @@
 
 package jode.flow;
 import jode.expr.ConstOperator;
+import jode.type.Type;
 
 /** 
  * This block represents a case instruction.  A case instruction is a
@@ -54,13 +55,13 @@ public class CaseBlock extends StructuredBlock {
     boolean isLastBlock = false;
 
     public CaseBlock(int value) {
-	this(false);
 	this.value = value;
+	subBlock = null;
     }
 
-    public CaseBlock(boolean isDef) {
-	isDefault = isDef;
-	subBlock = new EmptyBlock();
+    public CaseBlock(int value, Jump dest) {
+	this.value = value;
+	subBlock = new EmptyBlock(dest);
 	subBlock.outer = this;
     }
 
@@ -92,7 +93,7 @@ public class CaseBlock extends StructuredBlock {
      */
     protected boolean wantBraces() {
 	StructuredBlock block = subBlock;
-	if (block instanceof EmptyBlock)
+	if (block == null)
 	    return false;
 	for (;;) {
 	    if (block.declare != null && !block.declare.isEmpty()) {
@@ -132,7 +133,9 @@ public class CaseBlock extends StructuredBlock {
      * Returns all sub block of this structured block.
      */
     public StructuredBlock[] getSubBlocks() {
-        return new StructuredBlock[] { subBlock };
+        return (subBlock != null) 
+            ? new StructuredBlock[] { subBlock }
+            : new StructuredBlock[0];
     }
 
     public void dumpInstruction(jode.decompiler.TabbedPrintWriter writer) 
@@ -171,14 +174,12 @@ public class CaseBlock extends StructuredBlock {
 		writer.untab();
 	    }
             ConstOperator constOp = new ConstOperator(new Integer(value));
-	    constOp.setType(((SwitchBlock)outer).getInstruction().getType());
-            constOp.makeInitializer();
+	    Type type = ((SwitchBlock)outer).getInstruction().getType();
+	    constOp.setType(type);
+            constOp.makeInitializer(type);
 	    writer.print("case " + constOp.toString() + ":");
         }
-	if (subBlock instanceof EmptyBlock
-	    && subBlock.jump == null) {
-	    writer.println();
-	} else {
+	if (subBlock != null) {
 	    boolean needBraces = wantBraces();
 	    if (needBraces)
 		writer.openBrace();
@@ -191,7 +192,8 @@ public class CaseBlock extends StructuredBlock {
 	    }
 	    if (needBraces)
 		writer.closeBrace();
-	}
+	} else
+	    writer.println();
     }
 
     /**

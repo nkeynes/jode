@@ -76,7 +76,7 @@ public abstract class Opcodes implements jode.bytecode.Opcodes {
 						Instruction instr,
 						Expression expr)
     {
-        return new InstructionBlock(expr);
+        return new InstructionBlock(expr, new Jump(FlowBlock.NEXT_BY_ADDR));
     }
 
     private static StructuredBlock createSpecial(MethodAnalyzer ma, 
@@ -84,33 +84,39 @@ public abstract class Opcodes implements jode.bytecode.Opcodes {
 						 int type, 
 						 int stackcount, int param)
     {
-        return new SpecialBlock(type, stackcount, param);
+        return new SpecialBlock(type, stackcount, param, 
+				new Jump(FlowBlock.NEXT_BY_ADDR));
     }
 
     private static StructuredBlock createGoto(MethodAnalyzer ma,
                                               Instruction instr)
     {
-        return new EmptyBlock();
+        return new EmptyBlock
+	    (new Jump((FlowBlock)instr.getSingleSucc().getTmpInfo()));
     }
 
     private static StructuredBlock createJsr(MethodAnalyzer ma, 
 					     Instruction instr)
     {
-        return new JsrBlock();
+        return new JsrBlock
+	    (new Jump((FlowBlock)instr.getSingleSucc().getTmpInfo()),
+	     new Jump(FlowBlock.NEXT_BY_ADDR));
     }
 
     private static StructuredBlock createIfGoto(MethodAnalyzer ma, 
 						Instruction instr,
 						Expression expr)
     {
-        return new ConditionalBlock(expr);
+        return new ConditionalBlock
+	    (expr, new Jump((FlowBlock)instr.getSingleSucc().getTmpInfo()), 
+	     new Jump(FlowBlock.NEXT_BY_ADDR));
     }
 
     private static StructuredBlock createSwitch(MethodAnalyzer ma,
 						Instruction instr,
-                                                int[] cases)
+                                                int[] cases, FlowBlock[] dests)
     {
-        return new SwitchBlock(new NopOperator(Type.tUInt), cases);
+        return new SwitchBlock(new NopOperator(Type.tUInt), cases, dests);
     }
 
     private static StructuredBlock createBlock(MethodAnalyzer ma,
@@ -128,130 +134,107 @@ public abstract class Opcodes implements jode.bytecode.Opcodes {
     }
 
     /**
-     * Converts an instruction to a StructuredBlock and appencs it to the
-     * flow block.
-     * @param flow    The flowblock to which we should add.
-     * @param instr   The instruction to add.
+     * Read an opcode out of a data input stream containing the bytecode.
+     * @param addr    The current address.
+     * @param stream  The stream containing the java byte code.
      * @param ma      The Method Analyzer 
      *                (where further information can be get from).
      * @return The FlowBlock representing this opcode
      *         or null if the stream is empty.
+     * @exception IOException  if an read error occured.
+     * @exception ClassFormatError  if an invalid opcode is detected.
      */
-    public static void addOpcode(FlowBlock flow, Instruction instr, 
-				 MethodAnalyzer ma)
+    public static StructuredBlock readOpcode(Instruction instr, 
+					     MethodAnalyzer ma)
+        throws ClassFormatError
     {
-	ClassPath cp = ma.getClassAnalyzer().getClassPath();
         int opcode = instr.getOpcode();
         switch (opcode) {
         case opc_nop:
-	    break;
+            return createBlock(ma, instr, new EmptyBlock
+			       (new Jump(FlowBlock.NEXT_BY_ADDR)));
         case opc_ldc:
         case opc_ldc2_w:
-            flow.appendBlock
-		(createNormal(ma, instr, 
-			      new ConstOperator(instr.getConstant())));
-	    break;
+            return createNormal (ma, instr, 
+				 new ConstOperator(instr.getConstant()));
+
         case opc_iload: case opc_lload: 
-        case opc_fload: case opc_dload: case opc_aload: {
-	    LocalInfo local = ma.getLocalInfo(instr.getLocalInfo());
-            flow.appendReadBlock
-		(createNormal
-		 (ma, instr, new LocalLoadOperator
-		  (types[LOCAL_TYPES][opcode-opc_iload], ma, local)), local);
-	    break;
-	}
+        case opc_fload: case opc_dload: case opc_aload:
+            return createNormal
+                (ma, instr, new LocalLoadOperator
+                 (types[LOCAL_TYPES][opcode-opc_iload], ma,
+                  ma.getLocalInfo(instr.getAddr(), instr.getLocalSlot())));
         case opc_iaload: case opc_laload: 
         case opc_faload: case opc_daload: case opc_aaload:
         case opc_baload: case opc_caload: case opc_saload:
-            flow.appendBlock
-		(createNormal
-		 (ma, instr, new ArrayLoadOperator
-		  (types[ARRAY_TYPES][opcode - opc_iaload])));
-	    break;
+            return createNormal
+                (ma, instr, new ArrayLoadOperator
+                 (types[ARRAY_TYPES][opcode - opc_iaload]));
         case opc_istore: case opc_lstore: 
-        case opc_fstore: case opc_dstore: case opc_astore: {
-	    LocalInfo local = ma.getLocalInfo(instr.getLocalInfo());
-            flow.appendWriteBlock
-		(createNormal
-		 (ma, instr, new StoreInstruction
-		  (new LocalStoreOperator
-		   (types[LOCAL_TYPES][opcode-opc_istore], local))), local);
-	    break;
-	}
+        case opc_fstore: case opc_dstore: case opc_astore:
+            return createNormal
+                (ma, instr, new StoreInstruction
+		 (new LocalStoreOperator
+		  (types[LOCAL_TYPES][opcode-opc_istore], 
+		   ma.getLocalInfo(instr.getNextByAddr().getAddr(), 
+				   instr.getLocalSlot()))));
         case opc_iastore: case opc_lastore:
         case opc_fastore: case opc_dastore: case opc_aastore:
         case opc_bastore: case opc_castore: case opc_sastore:
-            flow.appendBlock
-		(createNormal
-		 (ma, instr, new StoreInstruction
-		  (new ArrayStoreOperator
-		   (types[ARRAY_TYPES][opcode - opc_iastore]))));
-	    break;
+            return createNormal
+                (ma, instr, new StoreInstruction
+		 (new ArrayStoreOperator
+		  (types[ARRAY_TYPES][opcode - opc_iastore])));
         case opc_pop: case opc_pop2:
-            flow.appendBlock
-		(createSpecial
-		 (ma, instr, SpecialBlock.POP, opcode - opc_pop + 1, 0));
-	    break;
-	case opc_dup: case opc_dup_x1: case opc_dup_x2:
+            return createSpecial
+                (ma, instr, SpecialBlock.POP, opcode - opc_pop + 1, 0);
+        case opc_dup: case opc_dup_x1: case opc_dup_x2:
         case opc_dup2: case opc_dup2_x1: case opc_dup2_x2:
-            flow.appendBlock
-		(createSpecial
-		 (ma, instr, SpecialBlock.DUP, 
-		  (opcode - opc_dup)/3+1, (opcode - opc_dup)%3));
-	    break;
+            return createSpecial
+                (ma, instr, SpecialBlock.DUP, 
+                 (opcode - opc_dup)/3+1, (opcode - opc_dup)%3);
         case opc_swap:
-            flow.appendBlock
-		(createSpecial(ma, instr, SpecialBlock.SWAP, 1, 0));
-	    break;
+            return createSpecial(ma, instr, SpecialBlock.SWAP, 1, 0);
         case opc_iadd: case opc_ladd: case opc_fadd: case opc_dadd:
         case opc_isub: case opc_lsub: case opc_fsub: case opc_dsub:
         case opc_imul: case opc_lmul: case opc_fmul: case opc_dmul:
         case opc_idiv: case opc_ldiv: case opc_fdiv: case opc_ddiv:
         case opc_irem: case opc_lrem: case opc_frem: case opc_drem:
-            flow.appendBlock
-		(createNormal
-		 (ma, instr, new BinaryOperator
-		  (types[BIN_TYPES][(opcode - opc_iadd)%4],
-		   (opcode - opc_iadd)/4+Operator.ADD_OP)));
-	    break;
+            return createNormal
+                (ma, instr, new BinaryOperator
+                 (types[BIN_TYPES][(opcode - opc_iadd)%4],
+                  (opcode - opc_iadd)/4+Operator.ADD_OP));
         case opc_ineg: case opc_lneg: case opc_fneg: case opc_dneg:
-            flow.appendBlock
-		(createNormal
-		 (ma, instr, new UnaryOperator
-		  (types[UNARY_TYPES][opcode - opc_ineg], Operator.NEG_OP)));
-	    break;
+            return createNormal
+                (ma, instr, new UnaryOperator
+                 (types[UNARY_TYPES][opcode - opc_ineg], Operator.NEG_OP));
         case opc_ishl: case opc_lshl:
         case opc_ishr: case opc_lshr:
         case opc_iushr: case opc_lushr:
-            flow.appendBlock
-		(createNormal
-		 (ma, instr, new ShiftOperator
-		  (types[UNARY_TYPES][(opcode - opc_ishl)%2],
-		   (opcode - opc_ishl)/2 + Operator.SHIFT_OP)));
-	    break;
+            return createNormal
+                (ma, instr, new ShiftOperator
+                 (types[UNARY_TYPES][(opcode - opc_ishl)%2],
+                  (opcode - opc_ishl)/2 + Operator.SHIFT_OP));
         case opc_iand: case opc_land:
         case opc_ior : case opc_lor :
         case opc_ixor: case opc_lxor:
-            flow.appendBlock
-		(createNormal
-		 (ma, instr, new BinaryOperator
-		  (types[ZBIN_TYPES][(opcode - opc_iand)%2],
-		   (opcode - opc_iand)/2 + Operator.AND_OP)));
-	    break;
+            return createNormal
+                (ma, instr, new BinaryOperator
+                 (types[ZBIN_TYPES][(opcode - opc_iand)%2],
+                  (opcode - opc_iand)/2 + Operator.AND_OP));
         case opc_iinc: {
-	    LocalInfo local = ma.getLocalInfo(instr.getLocalInfo());
             int value = instr.getIncrement();
             int operation = Operator.ADD_OP;
             if (value < 0) {
                 value = -value;
                 operation = Operator.SUB_OP;
             }
-            flow.appendReadBlock
-		(createNormal
-		 (ma, instr, new IIncOperator
-		  (new LocalStoreOperator(Type.tInt, local), 
-		   value, operation + Operator.OPASSIGN_OP)), local);
-	    break;
+            LocalInfo li
+		= ma.getLocalInfo(instr.getAddr(), instr.getLocalSlot());
+            return createNormal
+                (ma, instr, new IIncOperator
+                 (new LocalStoreOperator(Type.tInt, li), 
+		  value, operation + Operator.OPASSIGN_OP));
         }
         case opc_i2l: case opc_i2f: case opc_i2d:
         case opc_l2i: case opc_l2f: case opc_l2d:
@@ -261,101 +244,87 @@ public abstract class Opcodes implements jode.bytecode.Opcodes {
             int to   = (opcode-opc_i2l)%3;
             if (to >= from)
                 to++;
-            flow.appendBlock
-		(createNormal
-		 (ma, instr, new ConvertOperator(types[UNARY_TYPES][from], 
-						 types[UNARY_TYPES][to])));
-	    break;
+            return createNormal
+                (ma, instr, new ConvertOperator(types[UNARY_TYPES][from], 
+						types[UNARY_TYPES][to]));
         }
         case opc_i2b: case opc_i2c: case opc_i2s:
-            flow.appendBlock(createNormal
+            return createNormal
                 (ma, instr, new ConvertOperator
-                 (types[UNARY_TYPES][0], types[I2BCS_TYPES][opcode-opc_i2b])));
-	    break;
+                 (types[UNARY_TYPES][0], types[I2BCS_TYPES][opcode-opc_i2b]));
         case opc_lcmp:
         case opc_fcmpl: case opc_fcmpg:
         case opc_dcmpl: case opc_dcmpg:
-            flow.appendBlock(createNormal
+            return createNormal
                 (ma, instr, new CompareToIntOperator
                  (types[BIN_TYPES][(opcode-(opc_lcmp-3))/2], 
-                  (opcode == opc_fcmpg || opcode == opc_dcmpg))));
-	    break;
+                  (opcode == opc_fcmpg || opcode == opc_dcmpg)));
         case opc_ifeq: case opc_ifne: 
-            flow.appendBlock(createIfGoto
+            return createIfGoto
 		(ma, instr,
                  new CompareUnaryOperator
-                 (Type.tBoolInt, opcode - (opc_ifeq-Operator.COMPARE_OP))));
-	    break;
+                 (Type.tBoolInt, opcode - (opc_ifeq-Operator.COMPARE_OP)));
         case opc_iflt: case opc_ifge: case opc_ifgt: case opc_ifle:
-            flow.appendBlock(createIfGoto
+            return createIfGoto
 		(ma, instr,
                  new CompareUnaryOperator
-                 (Type.tInt, opcode - (opc_ifeq-Operator.COMPARE_OP))));
-	    break;
+                 (Type.tInt, opcode - (opc_ifeq-Operator.COMPARE_OP)));
         case opc_if_icmpeq: case opc_if_icmpne:
-            flow.appendBlock
-		(createIfGoto
-		 (ma, instr,
-		  new CompareBinaryOperator
-		  (tBoolIntHint, 
-		   opcode - (opc_if_icmpeq-Operator.COMPARE_OP))));
-	    break;
+            return createIfGoto
+		(ma, instr,
+                 new CompareBinaryOperator
+                 (tBoolIntHint, opcode - (opc_if_icmpeq-Operator.COMPARE_OP)));
         case opc_if_icmplt: case opc_if_icmpge: 
         case opc_if_icmpgt: case opc_if_icmple:
-            flow.appendBlock
-		(createIfGoto
-		 (ma, instr,
-		  new CompareBinaryOperator
-		  (tIntHint, opcode - (opc_if_icmpeq-Operator.COMPARE_OP))));
-	    break;
+            return createIfGoto
+		(ma, instr,
+                 new CompareBinaryOperator
+                 (tIntHint, opcode - (opc_if_icmpeq-Operator.COMPARE_OP)));
         case opc_if_acmpeq: case opc_if_acmpne:
-            flow.appendBlock
-		(createIfGoto
-		 (ma, instr,
-		  new CompareBinaryOperator
-		  (Type.tUObject, 
-		   opcode - (opc_if_acmpeq-Operator.COMPARE_OP))));
-	    break;
+            return createIfGoto
+		(ma, instr,
+                 new CompareBinaryOperator
+                 (Type.tUObject, 
+                  opcode - (opc_if_acmpeq-Operator.COMPARE_OP)));
+        case opc_goto:
+            return createGoto(ma, instr);
         case opc_jsr:
-            flow.appendBlock(createJsr(ma, instr));
-	    break;
-	case opc_ret: {
-	    LocalInfo local = ma.getLocalInfo(instr.getLocalInfo());
-            flow.appendReadBlock(createRet(ma, instr, local), local);
-	    break;
-	}
+            return createJsr(ma, instr);
+        case opc_ret:
+            return createRet
+                (ma, instr, 
+		 ma.getLocalInfo(instr.getAddr(), instr.getLocalSlot()));
         case opc_lookupswitch: {
 	    int[] cases = instr.getValues();
-            flow.appendBlock(createSwitch(ma, instr, cases));
-	    break;
+            FlowBlock[] dests = new FlowBlock[instr.getSuccs().length];
+            for (int i=0; i < dests.length; i++)
+                dests[i] = (FlowBlock) instr.getSuccs()[i].getTmpInfo();
+            dests[cases.length] = (FlowBlock)
+		instr.getSuccs()[cases.length].getTmpInfo();
+            return createSwitch(ma, instr, cases, dests);
         }
         case opc_ireturn: case opc_lreturn: 
         case opc_freturn: case opc_dreturn: case opc_areturn: {
             Type retType = Type.tSubType(ma.getReturnType());
-            flow.appendBlock
-		(createBlock
-		 (ma, instr, new ReturnBlock(new NopOperator(retType))));
-	    break;
+            return createBlock
+                (ma, instr, new ReturnBlock(new NopOperator(retType)));
         }
         case opc_return:
-	    throw new InternalError("opc_return no longer allowed");
-
+            return createBlock
+                (ma, instr, new EmptyBlock(new Jump(FlowBlock.END_OF_METHOD)));
         case opc_getstatic:
         case opc_getfield: {
             Reference ref = instr.getReference();
-            flow.appendBlock(createNormal
-			     (ma, instr, new GetFieldOperator
-			      (ma, opcode == opc_getstatic, ref)));
-	    break;
+            return createNormal
+                (ma, instr, new GetFieldOperator
+                 (ma, opcode == opc_getstatic, ref));
         }
         case opc_putstatic:
         case opc_putfield: {
             Reference ref = instr.getReference();
-            flow.appendBlock
-		(createNormal
-		 (ma, instr, new StoreInstruction
-		  (new PutFieldOperator(ma, opcode == opc_putstatic, ref))));
-	    break;
+            return createNormal
+                (ma, instr, new StoreInstruction
+		 (new PutFieldOperator(ma, opcode == opc_putstatic, ref)));
         }
         case opc_invokevirtual:
         case opc_invokespecial:
@@ -369,64 +338,51 @@ public abstract class Opcodes implements jode.bytecode.Opcodes {
 			: InvokeOperator.VIRTUAL);
             StructuredBlock block = createNormal
                 (ma, instr, new InvokeOperator(ma, flag, ref));
-            flow.appendBlock(block);
-	    break;
+            return block;
         }
         case opc_new: {
-            Type type = Type.tType(cp, instr.getClazzType());
+            Type type = Type.tType(instr.getClazzType());
             ma.useType(type);
-            flow.appendBlock(createNormal(ma, instr, new NewOperator(type)));
-	    break;
+            return createNormal(ma, instr, new NewOperator(type));
         }
         case opc_arraylength:
-            flow.appendBlock(createNormal
-			     (ma, instr, new ArrayLengthOperator()));
-	    break;
+            return createNormal
+                (ma, instr, new ArrayLengthOperator());
         case opc_athrow:
-            flow.appendBlock(createBlock
-			     (ma, instr, 
-			      new ThrowBlock(new NopOperator(Type.tUObject))));
-	    break;
+            return createBlock
+                (ma, instr, 
+                 new ThrowBlock(new NopOperator(Type.tUObject)));
         case opc_checkcast: {
-            Type type = Type.tType(cp, instr.getClazzType());
+            Type type = Type.tType(instr.getClazzType());
             ma.useType(type);
-            flow.appendBlock(createNormal
-			     (ma, instr, new CheckCastOperator(type)));
-	    break;
+            return createNormal
+                (ma, instr, new CheckCastOperator(type));
         }
         case opc_instanceof: {
-            Type type = Type.tType(cp, instr.getClazzType());
+            Type type = Type.tType(instr.getClazzType());
             ma.useType(type);
-            flow.appendBlock(createNormal
-			     (ma, instr, new InstanceOfOperator(type)));
-	    break;
+            return createNormal
+                (ma, instr, new InstanceOfOperator(type));
         }
         case opc_monitorenter:
-            flow.appendBlock(createNormal(ma, instr,
-					  new MonitorEnterOperator()));
-	    break;
+            return createNormal(ma, instr,
+                                new MonitorEnterOperator());
         case opc_monitorexit:
-            flow.appendBlock(createNormal(ma, instr,
-					  new MonitorExitOperator()));
-	    break;
+            return createNormal(ma, instr,
+                                new MonitorExitOperator());
         case opc_multianewarray: {
-            Type type = Type.tType(cp, instr.getClazzType());
+            Type type = Type.tType(instr.getClazzType());
 	    ma.useType(type);
             int dimension = instr.getDimensions();
-            flow.appendBlock(createNormal
-			     (ma, instr, 
-			      new NewArrayOperator(type, dimension)));
-	    break;
-	}
+            return createNormal(ma, instr, 
+				new NewArrayOperator(type, dimension));
+        }
         case opc_ifnull: case opc_ifnonnull:
-            flow.appendBlock(createIfGoto
-			     (ma, instr, new CompareUnaryOperator
-			      (Type.tUObject, 
-			       opcode - (opc_ifnull-Operator.COMPARE_OP))));
-	    break;
+            return createIfGoto
+                (ma, instr, new CompareUnaryOperator
+                 (Type.tUObject, opcode - (opc_ifnull-Operator.COMPARE_OP)));
         default:
             throw new jode.AssertError("Invalid opcode "+opcode);
         }
     }
 }
-

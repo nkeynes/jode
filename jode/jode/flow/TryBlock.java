@@ -51,7 +51,7 @@ public class TryBlock extends StructuredBlock {
     StructuredBlock[] subBlocks = new StructuredBlock[1];
 
     public TryBlock(FlowBlock tryFlow) {
-        this.gen = (VariableSet) tryFlow.used.clone();
+        this.gen = (VariableSet) tryFlow.gen.clone();
         this.flowBlock = tryFlow;
 
         StructuredBlock bodyBlock = tryFlow.block;
@@ -169,8 +169,8 @@ public class TryBlock extends StructuredBlock {
 	if (instr.isVoid() || instr.getFreeOperandCount() != 0
 	    || !(instr instanceof InvokeOperator)
 	    || !(catchBlock.catchBlock instanceof ThrowBlock)
-	    || !(((ClassType) catchBlock.exceptionType).getClassName().equals
-		 ("java.lang.CloneNotSupportedException")))
+	    || !(catchBlock.exceptionType.equals
+		 (Type.tClass("java.lang.CloneNotSupportedException"))))
 	    return false;
 
 	InvokeOperator arrayClone = (InvokeOperator) instr;
@@ -191,9 +191,8 @@ public class TryBlock extends StructuredBlock {
 	
 	InvokeOperator throwOp = (InvokeOperator) throwExpr;
 	if (!throwOp.isConstructor()
-	    || !(throwOp.getClassType() instanceof ClassType)
-	    || !(((ClassType) throwOp.getClassType()).getClassName()
-		 .equals("java.lang.InternalError"))
+	    || !(throwOp.getClassType()
+		 .equals(Type.tClass("java.lang.InternalError")))
 	    || throwOp.getMethodType().getParameterTypes().length != 1)
 	    return false;
 	

@@ -126,56 +126,58 @@ public class LocalInfo implements Declarable {
      * If this is called with ourself nothing will happen.
      * @param li the local info that we want to shadow.
      */
-    public void combineWith(LocalInfo li) {
-        li = li.getLocalInfo();
-        if (shadow != null) {
-            getLocalInfo().combineWith(li);
-        } else {
-            if (this != li) {
-                shadow = li;
-		if (!nameIsGenerated)
-		    shadow.name = name;
-		if (constExpr != null) {
-		    if (shadow.constExpr != null)
-			throw new jode.AssertError
-			    ("local has multiple constExpr");
-		    shadow.constExpr = constExpr;
-		}
-			
-//  		GlobalOptions.err.println("combining "+name+"("+type+") and "
-//  				       +shadow.name+"("+shadow.type+")");
-                shadow.setType(type);
+    public void combineWith(LocalInfo shadow) {
+        if (this.shadow != null) {
+            getLocalInfo().combineWith(shadow);
+	    return;
+	}
 
+        shadow = shadow.getLocalInfo();
+	if (this == shadow)
+	    return;
+	
+	this.shadow = shadow;
+	if (!nameIsGenerated)
+	    shadow.name = name;
+	if (constExpr != null) {
+	    if (shadow.constExpr != null)
+		throw new jode.AssertError
+		    ("local has multiple constExpr");
+	    shadow.constExpr = constExpr;
+	}
+	
+// 	GlobalOptions.err.println("combining "+name+"("+type+") and "
+// 				  +shadow.name+"("+shadow.type+")");
+	shadow.setType(type);
 
-                boolean needTypeUpdate = !li.type.equals(type);
-
-                java.util.Enumeration enum = operators.elements();
-                while (enum.hasMoreElements()) {
-                    LocalVarOperator lvo = 
-                        (LocalVarOperator) enum.nextElement();
-                    if (needTypeUpdate) {
-                        if ((GlobalOptions.debuggingFlags 
-			     & GlobalOptions.DEBUG_TYPES) != 0)
-                            GlobalOptions.err.println("updating " + lvo);
-                        lvo.updateType();
-                    }
-                    shadow.operators.addElement(lvo);
-                }
-
-		enum = hints.elements();
-		while (enum.hasMoreElements()) {
-		    Object hint = enum.nextElement();
-		    if (!shadow.hints.contains(hint))
-			shadow.hints.addElement(hint);
-		}
-
-                /* Clear unused fields, to allow garbage collection.
-                 */
-                type = null;
-                name = null;
-                operators = null;
-            }
-        }
+	
+	boolean needTypeUpdate = !shadow.type.equals(type);
+	
+	java.util.Enumeration enum = operators.elements();
+	while (enum.hasMoreElements()) {
+	    LocalVarOperator lvo = 
+		(LocalVarOperator) enum.nextElement();
+	    if (needTypeUpdate) {
+		if ((GlobalOptions.debuggingFlags 
+		     & GlobalOptions.DEBUG_TYPES) != 0)
+		    GlobalOptions.err.println("updating " + lvo);
+		lvo.updateType();
+	    }
+	    shadow.operators.addElement(lvo);
+	}
+	
+	enum = hints.elements();
+	while (enum.hasMoreElements()) {
+	    Object hint = enum.nextElement();
+	    if (!shadow.hints.contains(hint))
+		shadow.hints.addElement(hint);
+	}
+	
+	/* Clear unused fields, to allow garbage collection.
+	 */
+	type = null;
+	name = null;
+	operators = null;
     }
 
     /**
@@ -248,8 +250,7 @@ public class LocalInfo implements Declarable {
             return shadow.getName();
         }
         if (name == null) {
-	    return "local_" + (slot >= 0 ? slot + "_" : "")
-		+ Integer.toHexString(hashCode());
+	    return "local_" + slot + "_" + Integer.toHexString(hashCode());
 	}
         return name;
     }
@@ -313,9 +314,7 @@ public class LocalInfo implements Declarable {
 	    && otherType != Type.tError && li.type != Type.tError) {
 	    GlobalOptions.err.println("Type error in local " + getName()+": "
 				   + li.type + " and " + otherType);
-	    if ((GlobalOptions.debuggingFlags 
-		 & GlobalOptions.DEBUG_TYPES) != 0)
-		Thread.dumpStack();
+	    Thread.dumpStack();
 	}
         else if ((GlobalOptions.debuggingFlags & GlobalOptions.DEBUG_TYPES) != 0)
             GlobalOptions.err.println(getName()+" setType, new: "+newType
@@ -362,15 +361,13 @@ public class LocalInfo implements Declarable {
     }
 
     public boolean isConstant() {
-	LocalInfo li = getLocalInfo();
-	Enumeration enum = li.operators.elements();
-	int writes = 0;
-	while (enum.hasMoreElements()) {
-	    if (((LocalVarOperator) enum.nextElement()).isWrite())
-		writes++;
-	}
-	if (writes > 1)
-	    return false;
+	/* Checking if a local can be declared final is tricky, 
+	 * since it can also be the case if it is written in
+	 * the "then" and "else" part of an if statement.
+	 *
+	 * We return true now, otherwise some code would not be
+	 * decompilable.
+	 */
 	return true;
     }
 
@@ -386,8 +383,7 @@ public class LocalInfo implements Declarable {
 	    if (((LocalVarOperator) enum.nextElement()).isWrite())
 		writes++;
 	}
-	if (writes > 1)
-	    return false;
+	/* FIXME: Check if declaring final is okay */
 	li.isFinal = true;
 	return true;
     }

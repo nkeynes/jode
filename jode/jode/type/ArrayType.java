@@ -20,43 +20,26 @@
 package jode.type;
 import jode.bytecode.ClassInfo;
 import java.util.Vector;
-import java.io.IOException;
 
 /** 
  * This type represents an array type.
  *
  * @author Jochen Hoenicke 
  */
-public class ArrayType extends ClassType {
+public class ArrayType extends ReferenceType {
+    // The interfaces that an array implements:
+    final static ClassInfo[] arrayIfaces = {
+	// Make sure to list all interfaces, even if some interface
+	// implements another (or change code in getGeneralizedType().
+	ClassInfo.forName("java.lang.Cloneable"),
+	ClassInfo.forName("java.io.Serializable")
+    };
+
     Type elementType;
 
     ArrayType(Type elementType) {
-        super(TC_ARRAY, elementType + "[]");
+        super(TC_ARRAY);
         this.elementType = elementType;
-    }
-
-    public boolean isInterface() {
-	return false;
-    }
-
-    public boolean isUnknown() {
-	if (elementType instanceof ClassType)
-	    return ((ClassType) elementType).isUnknown();
-	return false;
-    }
-
-    public boolean isFinal() {
-	if (elementType instanceof ClassType)
-	    return ((ClassType) elementType).isFinal();
-	return false;
-    }
-
-    public ClassType getSuperClass() {
-	return tObject;
-    }
-
-    public ClassType[] getInterfaces() {
-	return arrayIfaces;
     }
 
     public Type getElementType() {
@@ -64,12 +47,18 @@ public class ArrayType extends ClassType {
     }
 
     public Type getSuperType() {
-	return tRange(tObject, 
-		      (ReferenceType) tArray(elementType.getSuperType()));
+	if (elementType instanceof IntegerType)
+	    return tRange(tObject, this);
+	else
+	    return tRange(tObject, 
+			  (ReferenceType) tArray(elementType.getSuperType()));
     }
 
     public Type getSubType() {
-        return tArray(elementType.getSubType());
+	if (elementType instanceof IntegerType)
+	    return this;
+	else
+	    return tArray(elementType.getSubType());
     }
 
     public Type getHint() {
@@ -80,30 +69,28 @@ public class ArrayType extends ClassType {
 	return tArray(elementType.getCanonic());
     }
     
-    public boolean isSubTypeOf(Type type) {
-	if (type == tNull)
-	    return true;
-	if (type instanceof ArrayType)
-	    return elementType.isSubTypeOf(((ArrayType) type).elementType);
-	return false;
-    }
-
     /**
      * Create the type corresponding to the range from bottomType to this.
      * @param bottomType the start point of the range
      * @return the range type, or tError if not possible.
      */
     public Type createRangeType(ReferenceType bottom) {
-        /*
-         *  tArray(y), tArray(x) -> tArray( y.intersection(x) )
-         *  obj      , tArray(x) -> <obj, tArray(x)>
+	/*
+	 *  tArray(y), tArray(x) -> tArray( y.intersection(x) )
+	 *  obj      , tArray(x) -> <obj, tArray(x)>
 	 *    iff tArray extends and implements obj
-         */
-	if (bottom instanceof ArrayType)
+	 */
+	if (bottom.getTypeCode() == TC_ARRAY)
 	    return tArray(elementType.intersection
 			  (((ArrayType)bottom).elementType));
-	
-	return super.createRangeType(bottom);
+
+	if (bottom.getTypeCode() == TC_CLASS) {
+	    ClassInterfacesType bottomCIT = (ClassInterfacesType)bottom;
+	    if (bottomCIT.clazz == null
+		&& implementsAllIfaces(null, arrayIfaces, bottomCIT.ifaces))
+		return tRange(bottomCIT, this);
+	}
+	return tError;
     }
 
     /**
@@ -112,21 +99,27 @@ public class ArrayType extends ClassType {
      * @return the common sub type.
      */
     public Type getSpecializedType(Type type) {
-        /*  
+	/*  
+	 *  tArray(x), iface     -> tArray(x) iff tArray implements iface
 	 *  tArray(x), tArray(y) -> tArray(x.intersection(y))
-         *  tArray(x), other     -> tArray(x) iff tArray implements object
-         */
+	 *  tArray(x), other     -> tError
+	 */
 	if (type.getTypeCode() == TC_RANGE) {
 	    type = ((RangeType) type).getBottom();
 	}
 	if (type == tNull)
 	    return this;
 	if (type.getTypeCode() == TC_ARRAY) {
-	    return tArray(elementType.intersection
-			  (((ArrayType)type).elementType));
+	    Type elType = elementType.intersection
+		(((ArrayType)type).elementType);
+	    return elType != tError ? tArray(elType) : tError;
 	}
-	if (type.isSubTypeOf(this))
-	    return this;
+	if (type.getTypeCode() == TC_CLASS) {
+	    ClassInterfacesType other = (ClassInterfacesType) type;
+	    if (other.clazz == null
+		&& implementsAllIfaces(null, arrayIfaces, other.ifaces))
+		return this;
+	}
 	return tError;
     }
 
@@ -136,24 +129,88 @@ public class ArrayType extends ClassType {
      * @return the common super type.
      */
     public Type getGeneralizedType(Type type) {
-        /*  tArray(x), tNull     -> tArray(x)
-         *  tArray(x), tClass(y) -> common ifaces of tArray and tClass
-         *  tArray(x), tArray(y) -> tArray(x.intersection(y))
-         *  tArray(x), other     -> tError
+	/*  tArray(x), tNull     -> tArray(x)
+	 *  tArray(x), tClass(y) -> common ifaces of tArray and tClass
+	 *  tArray(x), tArray(y) -> tArray(x.intersection(y)) or tObject
+	 *  tArray(x), other     -> tError
          */
 	if (type.getTypeCode() == TC_RANGE) {
 	    type = ((RangeType) type).getTop();
 	}
 	if (type == tNull)
             return this;
-        if (type instanceof ArrayType)
-	    return tArray(elementType.intersection
-                          (((ArrayType)type).elementType));
+        if (type.getTypeCode() == TC_ARRAY) {
+	    Type elType = elementType.intersection
+		(((ArrayType)type).elementType);
+	    if (elType != tError)
+		return tArray(elType);
+	    return ClassInterfacesType.create(null, arrayIfaces);
+	}
+	if (type.getTypeCode() == TC_CLASS) {
+	    ClassInterfacesType other = (ClassInterfacesType) type;
+	    if (implementsAllIfaces(other.clazz, other.ifaces, arrayIfaces))
+		return ClassInterfacesType.create(null, arrayIfaces);
+	    if (other.clazz == null 
+		&& implementsAllIfaces(null, arrayIfaces, other.ifaces))
+		return other;
+	    
+	    /* Now the more complicated part: find all interfaces, that are
+	     * implemented by one interface or class in each group.
+	     *
+	     * First get all interfaces of this.clazz and this.ifaces.
+	     */
+	    Vector newIfaces = new Vector();
+	iface_loop:
+	    for (int i=0; i < arrayIfaces.length; i++) {
+		/* Now consider each array interface.  If any clazz or
+		 * interface in other implements it, add it to the
+		 * newIfaces vector.  */
+		if (other.clazz != null 
+		    && arrayIfaces[i].implementedBy(other.clazz)) {
+		    newIfaces.addElement(arrayIfaces[i]);
+		    continue iface_loop;
+		}
+		for (int j=0; j<other.ifaces.length; j++) {
+		    if (arrayIfaces[i].implementedBy(other.ifaces[j])) {
+			newIfaces.addElement(arrayIfaces[i]);
+			continue iface_loop;
+		    }
+		}
+	    }
+	    ClassInfo[] ifaceArray = new ClassInfo[newIfaces.size()];
+	    newIfaces.copyInto(ifaceArray);
+	    return ClassInterfacesType.create(null, ifaceArray);
+	}
+	return tError;
+    }
 
-	if (!(type instanceof ReferenceType))
-	    return tError;
-
-	return ((ReferenceType)type).getGeneralizedType(this);
+    /**
+     * Checks if we need to cast to a middle type, before we can cast from
+     * fromType to this type.
+     * @return the middle type, or null if it is not necessary.
+     */
+    public Type getCastHelper(Type fromType) {
+	Type hintType = fromType.getHint();
+	switch (hintType.getTypeCode()) {
+	case TC_ARRAY:
+	    if (!elementType.isClassType()
+		|| !((ArrayType)hintType).elementType.isClassType())
+		return tObject;
+	    Type middleType = elementType.getCastHelper
+		(((ArrayType)hintType).elementType);
+	    if (middleType != null)
+		return tArray(middleType);
+	    return null;
+	case TC_CLASS:
+	    ClassInterfacesType hint = (ClassInterfacesType) hintType;
+	    if (hint.clazz == null
+		&& implementsAllIfaces(null, arrayIfaces, hint.ifaces))
+		return null;
+	    return tObject;
+	case TC_UNKNOWN:
+	    return null;
+	}
+	return tObject;
     }
 
     /**
@@ -164,12 +221,20 @@ public class ArrayType extends ClassType {
 	return elementType.isValidType();
     }
 
+    public boolean isClassType() {
+        return true;
+    }
+
     public String getTypeSignature() {
 	return "["+elementType.getTypeSignature();
     }
 
     public Class getTypeClass() throws ClassNotFoundException {
-	return Class.forName(getTypeSignature());
+	return Class.forName("["+elementType.getTypeSignature());
+    }
+
+    public String toString() {
+        return elementType.toString()+"[]";
     }
 
     private static String pluralize(String singular) {

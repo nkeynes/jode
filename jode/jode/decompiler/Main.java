@@ -1,4 +1,4 @@
-/* Main Copyright (C) 1998-1999 Jochen Hoenicke.
+/* Main Copyright (C) 1998-2001 Jochen Hoenicke.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,17 +19,17 @@
 
 package jode.decompiler;
 import jode.bytecode.ClassInfo;
-import jode.bytecode.ClassPath;
 import jode.GlobalOptions;
 
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.zip.ZipOutputStream;
+import java.util.zip.ZipFile;
 import java.util.zip.ZipEntry;
+import java.util.Enumeration;
 
 import gnu.getopt.LongOpt;
 import gnu.getopt.Getopt;
@@ -48,6 +48,7 @@ public class Main extends Options {
 	new LongOpt("verbose", LongOpt.OPTIONAL_ARGUMENT, null, 'v'),
 	new LongOpt("debug", LongOpt.OPTIONAL_ARGUMENT, null, 'D'),
 	new LongOpt("import", LongOpt.REQUIRED_ARGUMENT, null, 'i'),
+	new LongOpt("style", LongOpt.REQUIRED_ARGUMENT, null, 's'),
 	new LongOpt("lvt", LongOpt.OPTIONAL_ARGUMENT, null, 
 		    OPTION_START+0),
 	new LongOpt("inner", LongOpt.OPTIONAL_ARGUMENT, null, 
@@ -73,7 +74,10 @@ public class Main extends Options {
     public static void usage() {
 	PrintWriter err = GlobalOptions.err;
 	err.println("Version: " + GlobalOptions.version);
-        err.println("Usage: java jode.decompiler.Main [OPTIONS]... [CLASSES]...");
+        err.println("Usage: java jode.decompiler.Main [OPTION]* {CLASS|JAR}*");
+	err.println("Give a fully qualified CLASS name, e.g. jode.decompiler.Main, if you want to");
+	err.println("decompile a single class, or a JAR file containing many classes.");
+	err.println("OPTION is any of these:");
 	err.println("  -h, --help           "+
 		    "show this information.");
 	err.println("  -V, --version        "+
@@ -86,6 +90,41 @@ public class Main extends Options {
 		    "The directories should be separated by ','.");
 	err.println("  -d, --dest <dir>     "+
 		    "write decompiled files to disk into directory destdir.");
+	err.println("  -s, --style {sun|gnu}  "+
+		    "specify indentation style");
+	err.println("  -i, --import <pkglimit>,<clslimit>");
+	err.println("                       "+
+		    "import classes used more than clslimit times");
+	err.println("                       "+
+		    "and packages with more then pkglimit used classes.");
+	err.println("                       "+
+		    "Limit 0 means never import. Default is 0,1.");
+	err.println("  -D, --debug=...      "+
+		    "use --debug=help for more information.");
+
+	err.println("NOTE: The following options can be turned on or off with `yes' or `no'.");
+	err.println("The options tagged with (default) are normally on.  Omitting the yes/no");
+	err.println("argument will toggle the option, e.g. --verify is equivalent to --verify=no.");
+	err.println("      --inner          "+
+		    "decompile inner classes (default).");
+	err.println("      --anonymous      "+
+		    "decompile anonymous classes (default).");
+	err.println("      --contrafo       "+
+		    "transform constructors of inner classes (default).");
+	err.println("      --lvt            "+
+		    "use the local variable table (default).");
+	err.println("      --pretty         "+
+		    "use `pretty' names for local variables (default).");
+	err.println("      --push           "+
+		    "allow PUSH instructions in output.");
+	err.println("      --decrypt        "+
+		    "decrypt encrypted strings (default).");
+	err.println("      --onetime        "+
+		    "remove locals, that are used only one time.");
+	err.println("      --immediate      "+
+		    "output source immediately (may produce buggy code).");
+	err.println("      --verify         "+
+		    "verify code before decompiling it (default).");
     }
 
     public static boolean handleOption(int option, int longind, String arg) {
@@ -97,22 +136,98 @@ public class Main extends Options {
 	    options &= ~(1 << option);
 	else {
 	    GlobalOptions.err.println
-		("jode.decompiler.Main: option --"+longOptions[longind].getName()
-		 +" takes one of `yes', `no', `on', `off' as parameter");
+		("jode.decompiler.Main: option --"
+		 + longOptions[longind].getName()
+		 + " takes one of `yes', `no', `on', `off' as parameter");
 	    return false;
 	}
 	return true;
     }
 
+    public static void decompileClass(String className, 
+				      ZipOutputStream destZip, String destDir, 
+				      TabbedPrintWriter writer,
+				      ImportHandler imports) {
+	try {
+	    ClassInfo clazz;
+	    try {
+		clazz = ClassInfo.forName(className);
+	    } catch (IllegalArgumentException ex) {
+		GlobalOptions.err.println
+			("`"+className+"' is not a class name");
+		return;
+	    }
+	    if (skipClass(clazz))
+		return;
+	    
+	    String filename = 
+		className.replace('.', File.separatorChar)+".java";
+	    if (destZip != null) {
+		writer.flush();
+		destZip.putNextEntry(new ZipEntry(filename));
+	    } else if (destDir != null) {
+		File file = new File (destDir, filename);
+		File directory = new File(file.getParent());
+		if (!directory.exists() && !directory.mkdirs()) {
+		    GlobalOptions.err.println
+			("Could not create directory " 
+			 + directory.getPath() + ", check permissions.");
+		}
+		writer = new TabbedPrintWriter
+		    (new BufferedOutputStream(new FileOutputStream(file)),
+		     imports, false);
+	    }
+
+	    GlobalOptions.err.println(className);
+	    
+	    ClassAnalyzer clazzAna = new ClassAnalyzer(clazz, imports);
+	    clazzAna.dumpJavaFile(writer);
+		
+	    if (destZip != null) {
+		writer.flush();
+		destZip.closeEntry();
+	    } else if (destDir != null)
+		writer.close();
+	    /* Now is a good time to clean up */
+	    System.gc();
+	} catch (IOException ex) {
+	    GlobalOptions.err.println
+		("Can't write source of "+className+".");
+	    GlobalOptions.err.println("Check the permissions.");
+	    ex.printStackTrace(GlobalOptions.err);
+	}
+    }
+
     public static void main(String[] params) {
+	try {
+	    decompile(params);
+	} catch (ExceptionInInitializerError ex) {
+	    ex.getException().printStackTrace();
+	} catch (Throwable ex) {
+	    ex.printStackTrace();
+	}
+	/* When AWT applications are compiled with insufficient
+	 * classpath the type guessing by reflection code can
+	 * generate an awt thread that will prevent normal
+	 * exiting.
+	 */
+	System.exit(0);
+    }
+
+    public static void decompile(String[] params) {
 	if (params.length == 0) {
 	    usage();
 	    return;
 	}
 
-	ClassPath classPath;
-        String classPathStr = System.getProperty("java.class.path")
-	    .replace(File.pathSeparatorChar, ClassPath.altPathSeparatorChar);
+        String classPath = System.getProperty("java.class.path")
+	    .replace(File.pathSeparatorChar, Decompiler.altPathSeparatorChar);
+	String bootClassPath = System.getProperty("sun.boot.class.path");
+	if (bootClassPath != null)
+	    classPath += Decompiler.altPathSeparatorChar
+		+ bootClassPath.replace(File.pathSeparatorChar, 
+					Decompiler.altPathSeparatorChar);
+	
 	String destDir = null;
 
 	int importPackageLimit = ImportHandler.DEFAULT_PACKAGE_LIMIT;
@@ -135,7 +250,7 @@ public class Main extends Options {
 		GlobalOptions.err.println(GlobalOptions.version);
 		break;
 	    case 'c':
-		classPathStr = g.getOptarg();
+		classPath = g.getOptarg();
 		break;
 	    case 'd':
 		destDir = g.getOptarg();
@@ -161,6 +276,21 @@ public class Main extends Options {
 		if (arg == null)
 		    arg = "help";
 		errorInParams |= !GlobalOptions.setDebugging(arg);
+		break;
+	    }
+	    case 's': {
+		String arg = g.getOptarg();
+		if ("sun".startsWith(arg))
+		    outputStyle = SUN_STYLE;
+		else if ("gnu".startsWith(arg))
+		    outputStyle = GNU_STYLE;
+		else if ("pascal".startsWith(arg))
+		    outputStyle = Options.PASCAL_STYLE;
+		else {
+		    GlobalOptions.err.println
+			("jode.decompiler.Main: Unknown style `"+arg+"'.");
+		    errorInParams = true;
+		}
 		break;
 	    }
 	    case 'i': {
@@ -200,7 +330,6 @@ public class Main extends Options {
 	}
 	if (errorInParams)
 	    return;
-	classPath = new ClassPath(classPathStr);
         ClassInfo.setClassPath(classPath);
 	ImportHandler imports = new ImportHandler(importPackageLimit,
 						  importClassLimit);
@@ -223,57 +352,32 @@ public class Main extends Options {
 	}
         for (int i= g.getOptind(); i< params.length; i++) {
 	    try {
-		ClassInfo clazz;
-		try {
-		    clazz = classPath.getClassInfo(params[i]);
-		} catch (IllegalArgumentException ex) {
-		    GlobalOptions.err.println
-			("`"+params[i]+"' is not a class name");
-		    continue;
-		}
-		if (skipClass(clazz))
-		    continue;
-
-		String filename = 
-		    params[i].replace('.', File.separatorChar)+".java";
-		if (destZip != null) {
-		    writer.flush();
-		    destZip.putNextEntry(new ZipEntry(filename));
-		} else if (destDir != null) {
-		    File file = new File (destDir, filename);
-		    File directory = new File(file.getParent());
-		    if (!directory.exists() && !directory.mkdirs()) {
-			GlobalOptions.err.println
-			    ("Could not create directory " 
-			     + directory.getPath() + ", check permissions.");
+		if ((params[i].endsWith(".jar") || params[i].endsWith(".zip"))
+		    && new File(params[i]).isFile()) {
+		    /* The user obviously wants to decompile a jar/zip file.
+		     * Lets do him a pleasure and allow this.
+		     */
+		    ClassInfo.setClassPath(params[i]
+					   + Decompiler.altPathSeparatorChar
+					   + classPath);
+		    Enumeration enum = new ZipFile(params[i]).entries();
+		    while (enum.hasMoreElements()) {
+			String entry
+			    = ((ZipEntry) enum.nextElement()).getName();
+			if (entry.endsWith(".class")) {
+			    entry = entry.substring(0, entry.length() - 6)
+				.replace('/', '.');
+			    decompileClass(entry, destZip, destDir, 
+					   writer, imports);
+			}
 		    }
-		    writer = new TabbedPrintWriter
-			(new BufferedOutputStream(new FileOutputStream(file)),
-			 imports, false);
-		}
-
-		GlobalOptions.err.println(params[i]);
-		
-		ClassAnalyzer clazzAna = new ClassAnalyzer(clazz, imports);
-		clazzAna.dumpJavaFile(writer);
-		
-		if (destZip != null) {
-		    writer.flush();
-		    destZip.closeEntry();
-		} else if (destDir != null)
-		    writer.close();
-		/* Now is a good time to clean up */
-		System.gc();
-	    } catch (FileNotFoundException ex) {
-		GlobalOptions.err.println
-		    ("Can't read "+ex.getMessage()+".");
-		GlobalOptions.err.println
-		    ("Check the class path ("+classPathStr+
-		     ") and check that you use the java class name.");
+		    ClassInfo.setClassPath(classPath);
+		} else
+		    decompileClass(params[i], destZip, destDir, 
+				   writer, imports);
 	    } catch (IOException ex) {
 		GlobalOptions.err.println
-		    ("Can't write source of "+params[i]+".");
-		GlobalOptions.err.println("Check the permissions.");
+		    ("Can't read zip file " + params[i] + ".");
 		ex.printStackTrace(GlobalOptions.err);
 	    }
 	}

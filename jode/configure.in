@@ -1,18 +1,10 @@
 dnl Process this file with autoconf to produce a configure script.
 AC_INIT()
 
-AM_INIT_AUTOMAKE(jode, 1.0.93)
+AM_INIT_AUTOMAKE(jode, 1.1)
 
 dnl Checks for programs.
-dnl AC_PROG_CXX
-dnl AC_PROG_AWK
-dnl AC_PROG_CC
-dnl AC_PROG_CPP
-dnl AC_PROG_INSTALL
-dnl AC_PROG_LN_S
 AC_PROG_MAKE_SET
-dnl AC_PROG_RANLIB
-dnl AC_PATH_PROG(ZIP, zip)
 AC_PATH_PROG(PERL, perl)
 AC_PATH_PROG(CYGPATH, cygpath)
 
@@ -114,6 +106,13 @@ JODE_CHECK_CLASS(java.lang.Object, $CLASSLIB,
   [ AC_MSG_RESULT(no)
     AC_MSG_ERROR(Please specify location of core java class library) ])
 
+AC_MSG_CHECKING(for java.lang.ref.WeakReference)
+JODE_CHECK_CLASS(java.lang.ref.WeakReference, $CLASSLIB,
+  [ AC_MSG_RESULT(yes)
+    JCPPFLAGS="-DJDK12" ],
+  [ AC_MSG_RESULT(no)
+    JCPPFLAGS="-DJDK11" ])
+
 AC_MSG_CHECKING(for collection classes)
 JODE_CHECK_CLASS(java.util.Set, $CLASSPATH:$CLASSLIB,
  [ COLLECTIONS="java.util"
@@ -157,9 +156,9 @@ AC_SUBST(SWINGUI)
 
 AC_SUBST(CLASSPATH)
 AC_SUBST(JAVAC)
-AC_SUBST(JAR)
 
 AC_OUTPUT(Makefile
+javaDependencies.pl
 jode/Makefile
 jode/bytecode/Makefile
 jode/decompiler/Makefile
@@ -171,9 +170,81 @@ jode/obfuscator/modules/Makefile
 jode/swingui/Makefile
 jode/type/Makefile
 jode/util/Makefile
+jode/bytecode/BinaryInfo.java
+jode/bytecode/BytecodeInfo.java
+jode/bytecode/ClassInfo.java
+jode/bytecode/Reference.java
+jode/decompiler/ImportHandler.java
+jode/decompiler/ClassAnalyzer.java
+jode/decompiler/FieldAnalyzer.java
+jode/decompiler/MethodAnalyzer.java
+jode/decompiler/DeadCodeAnalysis.java
+jode/expr/Expression.java
+jode/expr/FieldOperator.java
+jode/expr/InvokeOperator.java
+jode/expr/LocalVarOperator.java
+jode/expr/Operator.java
+jode/expr/CheckNullOperator.java
+jode/flow/RetBlock.java
+jode/flow/InstructionContainer.java
+jode/flow/LoopBlock.java
+jode/flow/SequentialBlock.java
+jode/flow/SlotSet.java
+jode/flow/StructuredBlock.java
+jode/flow/SynchronizedBlock.java
+jode/flow/VariableSet.java
+jode/flow/CatchBlock.java
+jode/flow/IfThenElseBlock.java
+jode/flow/InstructionBlock.java
+jode/flow/FlowBlock.java
+jode/flow/TransformExceptionHandlers.java
+jode/jvm/CodeVerifier.java
+jode/jvm/Interpreter.java
+jode/jvm/SyntheticAnalyzer.java
+jode/obfuscator/ClassBundle.java
+jode/obfuscator/ClassIdentifier.java
+jode/obfuscator/ConstantRuntimeEnvironment.java
+jode/obfuscator/FieldIdentifier.java
+jode/obfuscator/Identifier.java
+jode/obfuscator/LocalIdentifier.java
+jode/obfuscator/Main.java
+jode/obfuscator/MethodIdentifier.java
+jode/obfuscator/OptionHandler.java
+jode/obfuscator/PackageIdentifier.java
+jode/obfuscator/Renamer.java
+jode/obfuscator/ScriptParser.java
+jode/obfuscator/TranslationTable.java
+jode/obfuscator/modules/ConstantAnalyzer.java
+jode/obfuscator/modules/KeywordRenamer.java
+jode/obfuscator/modules/LocalOptimizer.java
+jode/obfuscator/modules/LocalizeFieldTransformer.java
+jode/obfuscator/modules/ModifierMatcher.java
+jode/obfuscator/modules/MultiIdentifierMatcher.java
+jode/obfuscator/modules/NameSwapper.java
+jode/obfuscator/modules/RemovePopAnalyzer.java
+jode/obfuscator/modules/SerializePreserver.java
+jode/obfuscator/modules/SimpleAnalyzer.java
+jode/obfuscator/modules/StrongRenamer.java
+jode/obfuscator/modules/UniqueRenamer.java
+jode/obfuscator/modules/WildCard.java
+jode/swingui/Main.java
+jode/swingui/PackagesTreeModel.java
+jode/swingui/HierarchyTreeModel.java
+jode/type/Type.java
+jode/util/SimpleSet.java
+jode/util/SimpleMap.java
+jode/util/UnifyHash.java
+jode/GlobalOptions.java
 bin/Makefile
 bin/jode
 bin/jode.bat
 doc/Makefile
 test/Makefile,
-[chmod 755 bin/jode])
+[chmod 755 javaDependencies.pl bin/jode],
+[for i in \$CONFIG_FILES; do
+changequote(, )dnl
+  if [ \$i != \${i%.java} ]; then
+changequote([, ])dnl
+    $PERL $srcdir/jcpp $JCPPFLAGS \$i
+  fi
+done])

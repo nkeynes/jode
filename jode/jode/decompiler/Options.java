@@ -19,9 +19,17 @@
 
 package jode.decompiler;
 import jode.bytecode.ClassInfo;
-import java.io.IOException;
+import jode.bytecode.InnerClassInfo;
 
 public class Options {
+    public static final int TAB_SIZE_MASK    = 0x0f;
+    public static final int BRACE_AT_EOL     = 0x10;
+    public static final int BRACE_FLUSH_LEFT = 0x20;
+    public static final int GNU_SPACING      = 0x40;
+    public static final int SUN_STYLE        = 0x14;
+    public static final int GNU_STYLE        = 0x42;
+    public static final int PASCAL_STYLE     = 0x24;
+
     public static final int OPTION_LVT       = 0x0001;
     public static final int OPTION_INNER     = 0x0002;
     public static final int OPTION_ANON      = 0x0004;
@@ -37,6 +45,8 @@ public class Options {
 	OPTION_LVT | OPTION_INNER | OPTION_ANON | OPTION_PRETTY |
 	OPTION_DECRYPT | OPTION_VERIFY | OPTION_CONTRAFO;
 
+    public static int outputStyle = SUN_STYLE;
+
     public final static boolean doAnonymous() {
 	return (options & OPTION_ANON) != 0;
     }
@@ -46,14 +56,14 @@ public class Options {
     }
 
     public static boolean skipClass(ClassInfo clazz) {
-	if (!doInner() && !doAnonymous())
-	    return false;
-	try {
-	    clazz.load(ClassInfo.OUTERCLASS);
-	} catch (IOException ex) {
-	    return false;
+	InnerClassInfo[] outers = clazz.getOuterClasses();
+	if (outers != null) {
+	    if (outers[0].outer == null) {
+		return doAnonymous();
+	    } else {
+		return doInner();
+	    }
 	}
-	return (doInner() && clazz.getOuterClass() != null
-		|| doAnonymous() && clazz.isMethodScoped());
+	return false;
     }
 }

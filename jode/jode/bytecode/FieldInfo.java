@@ -22,11 +22,10 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.lang.reflect.Modifier;
-///#def COLLECTIONEXTRA java.lang
-import java.lang.Comparable;
-///#enddef
 
-public final class FieldInfo extends BinaryInfo implements Comparable {
+public class FieldInfo extends BinaryInfo {
+    ClassInfo clazzInfo;
+
     int modifier;
     String name;
     String typeSig;
@@ -35,24 +34,25 @@ public final class FieldInfo extends BinaryInfo implements Comparable {
     boolean syntheticFlag;
     boolean deprecatedFlag;
 
-    public FieldInfo() {
+    public FieldInfo(ClassInfo ci) {
+	this.clazzInfo = ci;
     }
 
-    public FieldInfo(String name, String typeSig, int modifier) {
+    public FieldInfo(ClassInfo ci, String name, String typeSig, int modifier) {
+	this.clazzInfo = ci;
 	this.name = name;
 	this.typeSig = typeSig;
 	this.modifier = modifier;
     }
 
-    void readAttribute(String name, int length,
-		       ConstantPool cp,
-		       DataInputStream input, 
-		       int howMuch) throws IOException {
-	if (howMuch >= ClassInfo.DECLARATIONS
-	    && name.equals("ConstantValue")) {
+    protected void readAttribute(String name, int length,
+				 ConstantPool cp,
+				 DataInputStream input, 
+				 int howMuch) throws IOException {
+	if ((howMuch & KNOWNATTRIBS) != 0 && name.equals("ConstantValue")) {
 	    if (length != 2)
-		throw new ClassFormatException
-		    ("ConstantValue attribute has wrong length");
+		throw new ClassFormatException("ConstantValue attribute"
+					       + " has wrong length");
 	    int index = input.readUnsignedShort();
 	    constant = cp.getConstant(index);
 	} else if (name.equals("Synthetic")) {
@@ -68,19 +68,19 @@ public final class FieldInfo extends BinaryInfo implements Comparable {
 	} else
 	    super.readAttribute(name, length, cp, input, howMuch);
     }
-    
-    void read(ConstantPool constantPool, 
-	      DataInputStream input, int howMuch) throws IOException {
+
+    public void read(ConstantPool constantPool, 
+                     DataInputStream input, int howMuch) throws IOException {
 	modifier = input.readUnsignedShort();
 	name = constantPool.getUTF8(input.readUnsignedShort());
 	typeSig = constantPool.getUTF8(input.readUnsignedShort());
         readAttributes(constantPool, input, howMuch);
     }
 
-    void reserveSmallConstants(GrowableConstantPool gcp) {
+    public void reserveSmallConstants(GrowableConstantPool gcp) {
     }
 
-    void prepareWriting(GrowableConstantPool gcp) {
+    public void prepareWriting(GrowableConstantPool gcp) {
 	gcp.putUTF8(name);
 	gcp.putUTF8(typeSig);
 	if (constant != null) {
@@ -108,8 +108,8 @@ public final class FieldInfo extends BinaryInfo implements Comparable {
 	return count;
     }
 
-    void writeKnownAttributes(GrowableConstantPool gcp,
-			      DataOutputStream output) 
+    public void writeKnownAttributes(GrowableConstantPool gcp,
+				     DataOutputStream output) 
 	throws IOException {
 	if (constant != null) {
 	    output.writeShort(gcp.putUTF8("ConstantValue"));
@@ -132,7 +132,7 @@ public final class FieldInfo extends BinaryInfo implements Comparable {
 	}
     }
 
-    void write(GrowableConstantPool constantPool, 
+    public void write(GrowableConstantPool constantPool, 
 		      DataOutputStream output) throws IOException {
 	output.writeShort(modifier);
 	output.writeShort(constantPool.putUTF8(name));
@@ -140,10 +140,10 @@ public final class FieldInfo extends BinaryInfo implements Comparable {
         writeAttributes(constantPool, output);
     }
 
-    void drop(int keep) {
-	if (keep < ClassInfo.DECLARATIONS)
+    public void dropInfo(int howMuch) {
+	if ((howMuch & KNOWNATTRIBS) != 0)
 	    constant = null;
-	super.drop(keep);
+	super.dropInfo(howMuch);
     }
 
     public String getName() {
@@ -167,6 +167,7 @@ public final class FieldInfo extends BinaryInfo implements Comparable {
     }
 
     public Object getConstant() {
+	clazzInfo.loadInfo(KNOWNATTRIBS);
 	return constant;
     }
 
@@ -192,26 +193,6 @@ public final class FieldInfo extends BinaryInfo implements Comparable {
 
     public void setConstant(Object newConstant) {
 	constant = newConstant;
-    }
-
-    /** 
-     * Compares two FieldInfo objects for field order.  The field
-     * order is as follows: First the static class intializer followed
-     * by constructor with type signature sorted lexicographic.  Then
-     * all other fields sorted lexicographically by name.  If two
-     * fields have the same name, they are sorted by type signature,
-     * though that can only happen for obfuscated code.
-     *
-     * @return a positive number if this field follows the other in
-     * field order, a negative number if it preceeds the
-     * other, and 0 if they are equal.  
-     * @exception ClassCastException if other is not a ClassInfo.  */
-    public int compareTo(Object other) {
-	FieldInfo fi = (FieldInfo) other;
-	int result = name.compareTo(fi.name);
-	if (result == 0)
-	    result = typeSig.compareTo(fi.typeSig);
-	return result;
     }
 
     public String toString() {

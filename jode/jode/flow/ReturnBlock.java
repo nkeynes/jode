@@ -35,17 +35,7 @@ public class ReturnBlock extends InstructionContainer {
     }
 
     public ReturnBlock(Expression instr) {
-        super(instr);
-    }
-
-    public boolean jumpMayBeChanged() {
-	return true;
-    }
-
-    public void checkConsistent() {
-	super.checkConsistent();
-	if (jump != null && jump.destination != FlowBlock.END_OF_METHOD)
-	    throw new InternalError("Inconsistency");
+        super(instr, new Jump(FlowBlock.END_OF_METHOD));
     }
 
     /**
@@ -63,6 +53,8 @@ public class ReturnBlock extends InstructionContainer {
 		newStack = stack.pop(params);
 	    }
 	}
+	if (jump != null)
+	    jump.stackMap = newStack;
 	return null;
     }
 

@@ -18,8 +18,8 @@
  */
 
 package jode.obfuscator;
-import jode.bytecode.BasicBlocks;
+import jode.bytecode.BytecodeInfo;
 
 public interface CodeAnalyzer extends CodeTransformer {
-    public void analyzeCode(MethodIdentifier parent, BasicBlocks bb);
+    public void analyzeCode(MethodIdentifier parent, BytecodeInfo bytecode);
 }

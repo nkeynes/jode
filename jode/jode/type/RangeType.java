@@ -57,9 +57,9 @@ public class RangeType extends Type {
      * depends on what ReferenceType class it implements:
      *
      * <dl>
-     * <dt>MultiClassType</dt>
-     * <dd>All types in this range must be widening castable to all classes
-     * in the bottomType</dd>	
+     * <dt>ClassInterfacesType</dt>
+     * <dd>All types in this range must be widening castable to all interfaces
+     * and to the class in the bottomType</dd>
      * <dt>ArrayType</dt>
      * <dd>All types in this range must be of the bottomType, or the
      * NullType.</dd>
@@ -107,13 +107,18 @@ public class RangeType extends Type {
     /**
      * Returns the hint type of this range type set.  This returns the
      * singleton set containing only the first top type, except if it
-     * is null and there is a unique bottom type, in which case it returns
-     * the bottom type.
+     * is null and there is a unique bottom type, in which case it
+     * returns the bottom type.
      * @return the hint type.  
      */
     public Type getHint() {
-	return topType == tNull && bottomType.equals(bottomType.getHint()) 
-	    ? bottomType.getHint(): topType.getHint();
+	Type bottomHint = bottomType.getHint();
+	Type topHint = topType.getHint();
+	
+	if (topType == tNull && bottomType.equals(bottomHint))
+	    return bottomHint;
+
+	return topHint;
     }
 
     /**
@@ -213,9 +218,8 @@ public class RangeType extends Type {
 	    result = tError;
 
         if ((GlobalOptions.debuggingFlags & GlobalOptions.DEBUG_TYPES) != 0) {
-	    GlobalOptions.err.println("intersecting "+ this +" and "+ type +
-				      " to <" + bottom + "," + top +
-				      "> to " + result);
+	    GlobalOptions.err.println("intersecting "+ this +" and "+ type + 
+				      " to " + result);
 	}	    
         return result;
     }

@@ -22,323 +22,269 @@ package jode.bytecode;
 /**
  * This class represents an instruction in the byte code.
  *
- * We only allow a subset of opcodes.  Other opcodes are mapped to
- * their simpler version.  When writing the bytecode the shortest
- * possible bytecode is produced.
- *
- * The opcodes we map are:
- * <pre>
- * [iflda]load_x           -&gt; [iflda]load
- * [iflda]store_x          -&gt; [iflda]store
- * [ifa]const_xx, ldc_w    -&gt; ldc
- * [dl]const_xx            -&gt; ldc2_w
- * wide opcode             -&gt; opcode
- * tableswitch             -&gt; lookupswitch
- * [a]newarray             -&gt; multianewarray
- * </pre> 
  */
-public class Instruction implements Opcodes{
+public final class Instruction implements Opcodes{
     /**
-     * The opcode and lineNr of the instruction.  
-     * opcode is <code>(lineAndOpcode &amp; 0xff)</code>, while 
-     * lineNr is <code>(lineAndOpcode &gt;&gt; 8)</code>.
-     * If line number is not known or unset, it is -1.
+     * The opcode of the instruction.  We map some opcodes, e.g.
+     * <pre>
+     * iload_[0-3] -> iload, ldc_w -> ldc, wide iinc -> iinc.
+     * </pre>
      */
-    private int lineAndOpcode;
-
+    // a byte would be enough, but then we would need an unsigned convert.
+    private int opcode;
     /**
-     * Creates a new simple Instruction with no parameters.  We map
-     * some opcodes, so you must always use the mapped opcode.
-     * @param opcode the opcode of this instruction.
-     * @exception IllegalArgumentException if opcode is not in our subset
-     * or if opcode needs a parameter.  */
-    public static Instruction forOpcode(int opcode) {
-	switch (opcode) {
-	case opc_nop:
-	case opc_iaload: case opc_laload: case opc_faload:
-	case opc_daload: case opc_aaload:
-	case opc_baload: case opc_caload: case opc_saload:
-	case opc_iastore: case opc_lastore: case opc_fastore:
-	case opc_dastore: case opc_aastore:
-	case opc_bastore: case opc_castore: case opc_sastore:
-	case opc_pop: case opc_pop2:
-	case opc_dup: case opc_dup_x1: case opc_dup_x2:
-	case opc_dup2: case opc_dup2_x1: case opc_dup2_x2:
-	case opc_swap:
-	case opc_iadd: case opc_ladd: case opc_fadd: case opc_dadd:
-	case opc_isub: case opc_lsub: case opc_fsub: case opc_dsub:
-	case opc_imul: case opc_lmul: case opc_fmul: case opc_dmul:
-	case opc_idiv: case opc_ldiv: case opc_fdiv: case opc_ddiv:
-	case opc_irem: case opc_lrem: case opc_frem: case opc_drem:
-	case opc_ineg: case opc_lneg: case opc_fneg: case opc_dneg:
-	case opc_ishl: case opc_lshl:
-	case opc_ishr: case opc_lshr:
-	case opc_iushr: case opc_lushr: 
-	case opc_iand: case opc_land:
-	case opc_ior: case opc_lor: 
-	case opc_ixor: case opc_lxor:
-	case opc_i2l: case opc_i2f: case opc_i2d:
-	case opc_l2i: case opc_l2f: case opc_l2d:
-	case opc_f2i: case opc_f2l: case opc_f2d:
-	case opc_d2i: case opc_d2l: case opc_d2f:
-	case opc_i2b: case opc_i2c: case opc_i2s:
-	case opc_lcmp: case opc_fcmpl: case opc_fcmpg:
-	case opc_dcmpl: case opc_dcmpg:
-	case opc_ireturn: case opc_lreturn: 
-	case opc_freturn: case opc_dreturn: case opc_areturn:
-	case opc_return: 
-	case opc_athrow:
-	case opc_arraylength:
-	case opc_monitorenter: case opc_monitorexit:
-	case opc_goto:
-	case opc_jsr:
-	case opc_ifeq: case opc_ifne: 
-	case opc_iflt: case opc_ifge: 
-	case opc_ifgt: case opc_ifle:
-	case opc_if_icmpeq: case opc_if_icmpne:
-	case opc_if_icmplt: case opc_if_icmpge: 
-	case opc_if_icmpgt: case opc_if_icmple:
-	case opc_if_acmpeq: case opc_if_acmpne:
-	case opc_ifnull: case opc_ifnonnull:
-	    return new Instruction(opcode);
-	default:
-	    throw new IllegalArgumentException("Instruction has a parameter");
-	}
-    }
-
-
-    /**
-     * Creates a new ldc Instruction.
-     * @param opcode the opcode of this instruction.
-     * @param constant the constant parameter.
-     * @exception IllegalArgumentException if opcode is not opc_ldc or
-     * opc_ldc2_w.
+     * If this opcode uses a local this gives the slot.  For multianewarray
+     * this gives the dimension.
      */
-    public static Instruction forOpcode(int opcode, Object constant) {
-	if (opcode == opc_ldc || opcode == opc_ldc2_w)
-	    return new ConstantInstruction(opcode, constant);
-	throw new IllegalArgumentException("Instruction has no constant");
+    private int shortData;
+    /**
+     * The address of this opcode.
+     */
+    private int addr;
+    /**
+     * Optional object data for this opcode.  There are four different
+     * usages of this field:
+     * <dl>
+     * <dt>opc_ldc / opc_ldc2_w</dt>
+     * <dd>The constant of type Integer/Long/Float/Double/String. </dd>
+     * <dt>opc_invokexxx / opc_xxxfield / opc_xxxstatic</dt>
+     * <dd>The field/method Reference</dd>
+     * <dt>opc_new / opc_checkcast / opc_instanceof / opc_multianewarray</dt>
+     * <dd>The typesignature of the class/array</dd>
+     * <dt>opc_lookupswitch</dt>
+     * <dd>The array of values of type int[]</dd>
+     * </dl>
+     */
+    private Object objData;
+    /**
+     * The successors of this opcodes, where flow may lead to
+     * (except that nextByAddr is implicit if !alwaysJump).  The
+     * value null means no successor, if there is one succesor, this
+     * is of type Instruction, otherwise, this is an array of Instruction.
+     */
+    private Object succs;
+    /**
+     * The predecessors of this opcode, orthogonal to the succs array.
+     * This must be null or a non empty array.
+     */
+    private Instruction[] preds;
+    /**
+     * The next instruction in code order.
+     */
+    Instruction nextByAddr;
+    /**
+     * The previous instruction in code order, useful when changing
+     * the order.
+     */
+    Instruction prevByAddr;
+
+    /**
+     * You can use this field to add some info to each instruction.
+     * After using, you must set it to null again.
+     * @XXX Do we really need this.  Every field here can quickly take 
+     * half a megabyte!
+     */
+    private Object tmpInfo;
+
+    public Instruction(int opcode) {
+	this.opcode = opcode;
     }
 
     /**
-     * Creates a new Instruction with a local variable as parameter.
-     * @param opcode the opcode of this instruction.
-     * @param lvi the local variable parameter.
-     * @exception IllegalArgumentException if opcode is not in our subset
-     * or if opcode doesn't need a single local variable as parameter.
-     */
-    public static Instruction forOpcode(int opcode, LocalVariableInfo lvi) {
-	if (opcode == opc_ret
-	    || opcode >= opc_iload && opcode <= opc_aload
-	    || opcode >= opc_istore && opcode <= opc_astore)
-	    return new SlotInstruction(opcode, lvi);
-	throw new IllegalArgumentException("Instruction has no slot");
-    }
-
-    /**
-     * Creates a new Instruction with reference as parameter.
-     * @param opcode the opcode of this instruction.
-     * @param reference the reference parameter.
-     * @exception IllegalArgumentException if opcode is not in our subset
-     * or if opcode doesn't need a reference as parameter.
-     */
-    public static Instruction forOpcode(int opcode, Reference reference) {
-	if (opcode >= opc_getstatic && opcode <= opc_invokeinterface)
-	    return new ReferenceInstruction(opcode, reference);
-	throw new IllegalArgumentException("Instruction has no reference");
-    }
-
-    /**
-     * Creates a new Instruction with type signature as parameter.
-     * @param opcode the opcode of this instruction.
-     * @param typeSig the type signature parameter.
-     * @exception IllegalArgumentException if opcode is not in our subset
-     * or if opcode doesn't need a type signature as parameter.
-     */
-    public static Instruction forOpcode(int opcode, String typeSig) {
-	switch (opcode) {
-	case opc_new: 
-	case opc_checkcast:
-	case opc_instanceof:
-	    return new TypeInstruction(opcode, typeSig);
-	default:
-	    throw new IllegalArgumentException("Instruction has no type");
-	}
-    }
-
-    /**
-     * Creates a new switch Instruction.
-     * @param opcode the opcode of this instruction must be opc_lookupswitch.
-     * @param values an array containing the different cases.
-     * @exception IllegalArgumentException if opcode is not opc_lookupswitch.
-     */
-    public static Instruction forOpcode(int opcode, int[] values) {
-	if (opcode == opc_lookupswitch)
-	    return new SwitchInstruction(opcode, values);
-	throw new IllegalArgumentException("Instruction has no values");
-    }
-
-    /**
-     * Creates a new increment Instruction.
-     * @param opcode the opcode of this instruction.
-     * @param lvi the local variable parameter.
-     * @param increment the increment parameter.
-     * @exception IllegalArgumentException if opcode is not opc_iinc.
-     */
-    public static Instruction forOpcode(int opcode, 
-					LocalVariableInfo lvi, int increment) {
-	if (opcode == opc_iinc)
-	    return new IncInstruction(opcode, lvi, increment);
-	throw new IllegalArgumentException("Instruction has no increment");
-    }
-
-    /**
-     * Creates a new Instruction with type signature and a dimension
-     * as parameter.
-     * @param opcode the opcode of this instruction.
-     * @param typeSig the type signature parameter.
-     * @param dimension the array dimension parameter.
-     * @exception IllegalArgumentException if opcode is not
-     * opc_multianewarray.  
-     */
-    public static Instruction forOpcode(int opcode, 
-					String typeSig, int dimension) {
-	if (opcode == opc_multianewarray)
-	    return new TypeDimensionInstruction(opcode, typeSig, dimension);
-	throw new IllegalArgumentException("Instruction has no dimension");
-    }
-
-    /**
-     * Creates a simple opcode, without any parameters.
-     */
-    Instruction(int opcode) {
-	this.lineAndOpcode = (-1 << 8) | opcode;
-    }
-
-    /**
-     * Returns the opcode of the instruction.  
+     * Returns the opcode of the instruction.  We map some opcodes:
+     * <pre>
+     * [iflda]load_x           -&gt; [iflda]load
+     * [iflda]store_x          -&gt; [iflda]store
+     * [ifa]const_xx, ldc_w    -&gt; ldc
+     * [dl]const_xx            -&gt; ldc2_w
+     * wide opcode             -&gt; opcode
+     * tableswitch             -&gt; lookupswitch
+     * [a]newarray             -&gt; multianewarray
+     * </pre>
      */
     public final int getOpcode() {
-	return lineAndOpcode & 0xff;
+	return opcode;
     }
 
-    public final boolean hasLineNr() {
-	return lineAndOpcode >= 0;
+    /**
+     * Returns the address of this opcode.  As long as you don't remove
+     * or insert instructions, you can be sure, that the addresses of the
+     * opcodes are unique, and that 
+     * <pre>
+     * instr.getAddr() + instr.getLength() == instr.getNextByAddr().getAddr()
+     * <pre>
+     *
+     * If you insert/remove Instructions, you should be aware that the
+     * above property is not guaranteed anymore.
+     */
+    public final int getAddr() {
+	return addr;
     }
 
-    public final int getLineNr() {
-	return lineAndOpcode >> 8;
+    public final int getNextAddr() {
+	return nextByAddr.addr;
     }
 
-    public final void setLineNr(int nr) {
-	lineAndOpcode = (nr << 8) | (lineAndOpcode & 0xff);
+    /**
+     * Returns the length of this opcode.  See getAddr() for some
+     * notes.  Note that the length doesn't necessarily reflect the
+     * real length, when this bytecode is written again, since the
+     * length of an ldc instruction depends on the number of entries
+     * in constant pool, and the order they are allocated.  
+     */
+    public final int getLength() {
+	return getNextAddr() - addr;
     }
 
-    public boolean isStore() {
-	return false;
+    final void setAddr(int addr) {
+	this.addr = addr;
     }
 
-    public boolean hasLocal() {
-	return false;
+    public final boolean hasLocalSlot() {
+	return opcode == opc_iinc || opcode == opc_ret
+	    || opcode >= opc_iload && opcode <= opc_aload
+	    || opcode >= opc_istore && opcode <= opc_astore;
     }
 	    
-    public int getLocalSlot()
+    public final int getLocalSlot()
+    /*{ require { hasLocalSlot()
+                  :: "Instruction has no slot" } }*/
     {
-	throw new IllegalArgumentException();
-	// UnsupportedOperationException would be more appropriate
+	return shortData;
     }
 
-    public LocalVariableInfo getLocalInfo()
+    public final void setLocalSlot(int slot) 
+    /*{ require { hasLocalSlot()
+                  :: "Instruction has no slot" } }*/
     {
-	throw new IllegalArgumentException();
-    }
-
-    public void setLocalInfo(LocalVariableInfo info) 
-    {
-	throw new IllegalArgumentException();
-    }
-
-    public void setLocalSlot(int slot) 
-    {
-	throw new IllegalArgumentException();
+	shortData = slot;
     }
 
     /**
-     * Get the increment for an opc_iinc instruction.
+     * Optional integer data for this opcode.  There are various uses
+     * for this:
+     * <dl>
+     * <dt>opc_iinc</dt>
+     * <dd>The value by which the constant is increased/decreased. (short)</dd>
+     * <dt>opc_multianewarray</dt>
+     * <dd>The number of dimensions (1..255)</dd>
+     * </dl>
      */
-    public int getIncrement()
+    public final int getIncrement()
+    /*{ require { opcode == opc_iinc || opcode == opc_multianewarray
+                  || opcode == opc_tableswitch
+                  :: "Instruction has no int data" } }*/
     {
-	throw new IllegalArgumentException();
+	/* shortData already used for local slot */
+	return ((Short) objData).shortValue();
     }
 
     /**
-     * Set the increment for an opc_iinc instruction.
+     * Optional integer data for this opcode.  There are various uses
+     * for this:
+     * <dl>
+     * <dt>opc_iinc</dt>
+     * <dd>The value by which the constant is increased/decreased. (short)</dd>
+     * <dt>opc_multianewarray</dt>
+     * <dd>The number of dimensions (1..255)</dd>
+     * </dl>
      */
-    public void setIncrement(int incr)
+    public final void setIncrement(int incr)
+    /*{ require { opcode == opc_iinc || opcode == opc_multianewarray
+                  :: "Instruction has no int data" } }*/
     {
-	throw new IllegalArgumentException();
+	/* shortData already used for local slot */
+	objData = new Short((short) incr);
     }
 
     /**
-     * Get the dimensions for an opc_anewarray opcode.
+     *
      */
-    public int getDimensions()
+    public final int getDimensions()
+    /*{ require { opcode == opc_multianewarray
+                  :: "Instruction has no dimensions" } }*/
     {
-	throw new IllegalArgumentException();
+	return shortData;
     }
 
     /**
-     * Set the dimensions for an opc_anewarray opcode.
+     *
      */
-    public void setDimensions(int dims)
+    public final void setDimensions(int dims)
+    /*{ require { opcode == opc_multianewarray
+                  :: "Instruction has no dimensions" } }*/
     {
-	throw new IllegalArgumentException();
+	shortData = dims;
     }
 
-    public Object getConstant() 
+    public final Object getConstant() 
+    /*{ require { opcode == opc_ldc || opcode == opc_ldc2_w
+                  :: "Instruction has no constant" } }*/
     {
-	throw new IllegalArgumentException();
+	return objData;
     }
 
-    public void setConstant(Object constant) 
+    public final void setConstant(Object constant) 
+    /*{ require { opcode == opc_ldc || opcode == opc_ldc2_w
+                  :: "Instruction has no constant" } }*/
     {
-	throw new IllegalArgumentException();
+	objData = constant;
     }
 
-    public Reference getReference()
+    public final Reference getReference()
+    /*{ require { opcode >= opc_getstatic && opcode <= opc_invokeinterface
+                  :: "Instruction has no reference" } }*/
     {
-	throw new IllegalArgumentException();
+	return (Reference) objData;
     }
 
-    public void setReference(Reference ref)
+    public final void setReference(Reference ref)
+    /*{ require { opcode >= opc_getstatic && opcode <= opc_invokeinterface
+                  :: "Instruction has no reference" } }*/
     {
-	throw new IllegalArgumentException();
+	objData = ref;
     }
 
-    public String getClazzType() 
+    public final String getClazzType() 
+    /*{ require { opcode == opc_new 
+                  || opcode == opc_checkcast
+                  || opcode == opc_instanceof
+                  || opcode == opc_multianewarray
+		  :: "Instruction has no typesig" } }*/
     {
-	throw new IllegalArgumentException();
+	return (String) objData;
     }
 
-    public void setClazzType(String type)
+    public final void setClazzType(String type)
+    /*{ require { opcode == opc_new 
+                  || opcode == opc_checkcast
+                  || opcode == opc_instanceof
+                  || opcode == opc_multianewarray
+		  :: "Instruction has no typesig" } }*/
     {
-	throw new IllegalArgumentException();
+	objData = type;
     }
 
-    public int[] getValues()
+    public final int[] getValues()
+    /*{ require { opcode == opc_lookupswitch
+                  :: "Instruction has no values" } }*/
     {
-	throw new IllegalArgumentException();
+	return (int[]) objData;
     }
 
-    public void setValues(int[] values) 
+    public final void setValues(int[] values) 
+    /*{ require { opcode == opc_lookupswitch
+                  :: "Instruction has no values" } }*/
     {
-	throw new IllegalArgumentException();
+	objData = values;
     }
 
     public final boolean doesAlwaysJump() {
-	switch (getOpcode()) {
+	switch (opcode) {
 	case opc_ret:
 	case opc_goto:
+	case opc_jsr:
+	case opc_tableswitch:
 	case opc_lookupswitch:
 	case opc_ireturn: 
 	case opc_lreturn: 
@@ -353,6 +299,351 @@ public class Instruction implements Opcodes{
 	}
     }
 
+    public final Instruction[] getPreds() {
+	return preds;
+    }
+
+    /**
+     * Returns true if this opcode has successors, other than the implicit
+     * getNextByAddr().
+     */
+    public boolean hasSuccs() {
+	return succs != null;
+    }
+
+    /**
+     * Returns the successors of this opcodes, where flow may lead to
+     * (except that nextByAddr is implicit if !alwaysJump).  The
+     * value null means that there is no successor.
+     */
+    public final Instruction[] getSuccs() {
+	if (succs instanceof Instruction)
+	    return new Instruction[] { (Instruction) succs };
+	return (Instruction[]) succs;
+    }
+
+    /**
+     * Returns the single successor of this opcodes.  This gives the
+     * target of a goto, jsr, or if opcode.
+     * @return null if there is no successor, otherwise the successor.
+     * @exception ClassCastException if this has more than one succ.
+     */
+    public final Instruction getSingleSucc() {
+	return (Instruction) succs;
+    }
+
+    public final Instruction getPrevByAddr() {
+	if (prevByAddr.opcode == opc_impdep1)
+	    return null;
+	return prevByAddr;
+    }
+
+    public final Instruction getNextByAddr() {
+	if (nextByAddr.opcode == opc_impdep1)
+	    return null;
+	return nextByAddr;
+    }
+
+    public final Object getTmpInfo() {
+	return tmpInfo;
+    }
+
+    public final void setTmpInfo(Object info) {
+	tmpInfo = info;
+    }
+
+
+    // INTERNAL FUNCTIONS TO KEEP PREDS AND SUCCS CONSISTENT 
+
+    final void removeSuccs() {
+	if (succs == null)
+	    return;
+	if (succs instanceof Instruction[]) {
+	    Instruction[] ss = (Instruction[]) succs;
+	    for (int i = 0; i < ss.length; i++)
+		if (ss[i] != null)
+		    ss[i].removePredecessor(this);
+	} else
+	    ((Instruction) succs).removePredecessor(this);
+	succs = null;
+    }
+
+    /**
+     * @param to may be null
+     */
+    private final void promoteSuccs(Instruction from, Instruction to) {
+	if (succs == from)
+	    succs = to;
+	else if (succs instanceof Instruction[]) {
+	    Instruction[] ss = (Instruction[]) succs;
+	    for (int i = 0; i < ss.length; i++)
+		if (ss[i] == from)
+		    ss[i] = to;
+	}
+    }
+
+    /**
+     * @exception ClassCastException if newSuccs is neither an Instruction
+     * nor an array of instructions.
+     */
+    public final void setSuccs(Object newSuccs) {
+	if (succs == newSuccs)
+	    return;
+	removeSuccs();
+	if (newSuccs == null)
+	    return;
+	if (newSuccs instanceof Instruction[]) {
+	    Instruction[] ns = (Instruction[]) newSuccs;
+	    switch (ns.length) {
+	    case 0:
+		break;
+	    case 1:
+		succs = ns[0];
+		ns[0].addPredecessor(this);
+		break;
+	    default:
+		succs = ns;
+		for (int i = 0; i < ns.length; i++)
+		    ns[i].addPredecessor(this);
+		break;
+	    }
+	} else {
+	    succs = newSuccs;
+	    ((Instruction) newSuccs).addPredecessor(this);
+	}
+    }
+
+    void addPredecessor(Instruction pred) {
+	if (preds == null) {
+	    preds = new Instruction[] { pred };
+	    return;
+	}
+	int predsLength = preds.length;
+	Instruction[] newPreds = new Instruction[predsLength+1];
+	System.arraycopy(preds, 0, newPreds, 0, predsLength);
+	newPreds[predsLength] = pred;
+	preds = newPreds;
+    }
+
+    void removePredecessor(Instruction pred) {
+	/* Hopefully it doesn't matter if this is slow */
+	int predLength = preds.length;
+	if (predLength == 1) {
+	    if (preds[0] != pred)
+		throw new jode.AssertError
+		    ("removing not existing predecessor");
+	    preds = null;
+	} else {
+	    Instruction[] newPreds = new Instruction[predLength-1];
+	    int j;
+	    for (j = 0; preds[j] != pred; j++)
+		newPreds[j] = preds[j];
+	    System.arraycopy(preds, j+1, newPreds, j, predLength - j - 1);
+	    preds = newPreds;
+	}
+    }
+
+    // ADDING, REMOVING AND REPLACING INSTRUCTIONS
+
+    /**
+     * Replaces the opcode of this instruction.  You should only use the
+     * mapped opcodes:
+     * <pre>
+     * [iflda]load_x           -&gt; [iflda]load
+     * [iflda]store_x          -&gt; [iflda]store
+     * [ifa]const_xx, ldc_w    -&gt; ldc
+     * [dl]const_xx            -&gt; ldc2_w
+     * wide opcode             -&gt; opcode
+     * tableswitch             -&gt; lookupswitch
+     * [a]newarray             -&gt; multianewarray
+     * </pre>
+     */
+    public final void replaceInstruction(Instruction newInstr,
+					 BytecodeInfo codeinfo) {
+	/* remove predecessors of successors */
+	removeSuccs();
+
+	newInstr.addr = addr;
+	nextByAddr.prevByAddr = newInstr;
+	newInstr.nextByAddr = nextByAddr;
+	prevByAddr.nextByAddr = newInstr;
+	newInstr.prevByAddr = prevByAddr;
+	prevByAddr = null;
+	nextByAddr = null;
+
+	/* promote the successors of the predecessors to newInstr */
+	if (preds != null) {
+	    for (int j=0; j < preds.length; j++)
+		preds[j].promoteSuccs(this, newInstr);
+	    newInstr.preds = preds;
+	    preds = null;
+	}
+
+	/* adjust exception handlers */
+	Handler[] handlers = codeinfo.getExceptionHandlers();
+	for (int i=0; i< handlers.length; i++) {
+	    if (handlers[i].start == this)
+		handlers[i].start = newInstr;
+	    if (handlers[i].end == this)
+		handlers[i].end = newInstr;
+	    if (handlers[i].catcher == this)
+		handlers[i].catcher = newInstr;
+	}
+
+	/* adjust local variable table and line number table */
+	LocalVariableInfo[] lvt = codeinfo.getLocalVariableTable();
+	if (lvt != null) {
+	    for (int i=0; i< lvt.length; i++) {
+		if (lvt[i].start == this)
+		    lvt[i].start = newInstr;
+		if (lvt[i].end == this)
+		    lvt[i].end = newInstr;
+	    }
+	}
+	LineNumber[] lnt = codeinfo.getLineNumberTable();
+	if (lnt != null) {
+	    for (int i=0; i< lnt.length; i++) {
+		if (lnt[i].start == this)
+		    lnt[i].start = newInstr;
+	    }
+	}
+    }
+
+    void appendInstruction(Instruction newInstr, BytecodeInfo codeinfo) {
+	newInstr.addr = nextByAddr.addr;
+
+	newInstr.nextByAddr = nextByAddr;
+	nextByAddr.prevByAddr = newInstr;
+	newInstr.prevByAddr = this;
+	nextByAddr = newInstr;
+
+	/* adjust exception handlers end */
+	Handler[] handlers = codeinfo.getExceptionHandlers();
+	if (handlers != null) {
+	    for (int i=0; i< handlers.length; i++) {
+		if (handlers[i].end == this)
+		    handlers[i].end = newInstr;
+	    }
+	}
+    }
+
+    /**
+     * Removes this instruction (as if it would be replaced by a nop).
+     */
+    void removeInstruction(BytecodeInfo codeinfo) {
+
+	/* remove from chained list and adjust addr / length */
+	prevByAddr.nextByAddr = nextByAddr;
+	nextByAddr.prevByAddr = prevByAddr;
+
+	/* remove predecessors of successors */
+	removeSuccs();
+
+	/* promote the predecessors to next instruction */
+	if (preds != null) {
+	    for (int j=0; j < preds.length; j++)
+		preds[j].promoteSuccs(this, nextByAddr);
+	    if (nextByAddr.preds == null)
+		nextByAddr.preds = preds;
+	    else {
+		Instruction[] newPreds = new Instruction
+		    [nextByAddr.preds.length + preds.length];
+		System.arraycopy(nextByAddr.preds, 0, newPreds, 0,
+				 nextByAddr.preds.length);
+		System.arraycopy(preds, 0, newPreds, nextByAddr.preds.length, 
+				 preds.length);
+		nextByAddr.preds = newPreds;
+	    }
+	    preds = null;
+	}
+
+	/* adjust exception handlers */
+	Handler[] handlers = codeinfo.getExceptionHandlers();
+	for (int i=0; i< handlers.length; i++) {
+	    if (handlers[i].start == this && handlers[i].end == this) {
+		/* Remove the handler.
+		 * This is very seldom, so we can make it slow */
+		Handler[] newHandlers = new Handler[handlers.length - 1];
+		System.arraycopy(handlers, 0, newHandlers, 0, i);
+		System.arraycopy(handlers, i+1, newHandlers, i, 
+				 handlers.length - (i+1));
+		handlers = newHandlers;
+		codeinfo.setExceptionHandlers(newHandlers);
+		i--;
+	    } else {
+		if (handlers[i].start == this)
+		    handlers[i].start = nextByAddr;
+		if (handlers[i].end == this)
+		    handlers[i].end = prevByAddr;
+		if (handlers[i].catcher == this)
+		    handlers[i].catcher = nextByAddr;
+	    }
+	}
+
+	/* adjust local variable table and line number table */
+	LocalVariableInfo[] lvt = codeinfo.getLocalVariableTable();
+	if (lvt != null) {
+	    for (int i=0; i< lvt.length; i++) {
+		if (lvt[i].start == this && lvt[i].end == this) {
+		    /* Remove the local variable info.
+		     * This is very seldom, so we can make it slow
+		     */
+		    LocalVariableInfo[] newLVT = 
+			new LocalVariableInfo[lvt.length - 1];
+		    System.arraycopy(lvt, 0, newLVT, 0, i);
+		    System.arraycopy(lvt, i+1, newLVT, i, 
+				     newLVT.length - i);
+		    lvt = newLVT;
+		    codeinfo.setLocalVariableTable(newLVT);
+		    i--;
+		} else {
+		    if (lvt[i].start == this)
+			lvt[i].start = nextByAddr;
+		    if (lvt[i].end == this)
+			lvt[i].end = prevByAddr;
+		}
+	    }
+	}
+	LineNumber[] lnt = codeinfo.getLineNumberTable();
+	if (lnt != null) {
+	    for (int i=0; i< lnt.length; i++) {
+		if (lnt[i].start == this) {
+		    if (nextByAddr.opcode == opc_impdep1
+			|| (i+1 < lnt.length 
+			    && lnt[i+1].start == nextByAddr)) {
+			/* Remove the line number.
+			 * This is very seldom, so we can make it slow */
+			LineNumber[] newLNT = 
+			    new LineNumber[lnt.length - 1];
+			System.arraycopy(lnt, 0, newLNT, 0, i);
+			System.arraycopy(lnt, i+1, newLNT, i, 
+					 newLNT.length - i);
+			lnt = newLNT;
+			codeinfo.setLineNumberTable(newLNT);
+			i--;
+		    } else
+			lnt[i].start = nextByAddr;
+		}
+	    }
+	}
+
+	prevByAddr = null;
+	nextByAddr = null;
+    }
+
+    public int compareTo(Instruction instr) {
+	if (addr != instr.addr)
+	    return addr - instr.addr;
+	if (this == instr)
+	    return 0;
+	do {
+	    instr = instr.nextByAddr;
+	    if (instr.addr > addr)
+		return -1;
+	} while (instr != this);
+	return 1;
+    }
+
     /**
      * This returns the number of stack entries this instruction
      * pushes and pops from the stack.  The result fills the given
@@ -365,30 +656,175 @@ public class Instruction implements Opcodes{
     /*{ require { poppush != null && poppush.length == 2
         :: "poppush must be an array of two ints" } } */
     {
-	byte delta = (byte) stackDelta.charAt(getOpcode());
-	poppush[0] = delta & 7;
-	poppush[1] = delta >> 3;
+	byte delta = (byte) stackDelta.charAt(opcode);
+	if (delta < 0x40) {
+	    poppush[0] = delta & 7;
+	    poppush[1] = delta >> 3;
+	} else {
+	    switch (opcode) {
+	    case opc_invokevirtual:
+	    case opc_invokespecial:
+	    case opc_invokestatic:
+	    case opc_invokeinterface: {
+		Reference ref = getReference();
+		String typeSig = ref.getType();
+		poppush[0] = opcode != opc_invokestatic ? 1 : 0;
+		poppush[0] += TypeSignature.getArgumentSize(typeSig);
+		poppush[1] = TypeSignature.getReturnSize(typeSig);
+		break;
+	    }
+	    
+	    case opc_putfield:
+	    case opc_putstatic: {
+		Reference ref = getReference();
+		poppush[1] = 0;
+		poppush[0] = TypeSignature.getTypeSize(ref.getType());
+		if (opcode == opc_putfield)
+		    poppush[0]++;
+		break;
+	    }
+	    case opc_getstatic:
+	    case opc_getfield: {
+		Reference ref = getReference();
+		poppush[1] = TypeSignature.getTypeSize(ref.getType());
+		poppush[0] = opcode == opc_getfield ? 1 : 0;
+		break;
+	    }
+	    
+	    case opc_multianewarray: {
+		poppush[1] = 1;
+		poppush[0] = getDimensions();
+		break;
+	    }
+	    default:
+		throw new jode.AssertError("Unknown Opcode: "+opcode);
+	    }
+	}
+    }
+    
+    public Instruction findMatchingPop() {
+	int poppush[] = new int[2];
+	getStackPopPush(poppush);	
+
+	int count = poppush[1];
+	Instruction instr = this;
+	while (true) {
+	    if (instr.succs != null || instr.doesAlwaysJump())
+		return null;
+	    instr = instr.nextByAddr;
+	    if (instr.preds != null)
+		return null;
+	    
+	    instr.getStackPopPush(poppush);	
+	    if (count == poppush[0])
+		return instr;
+	    count += poppush[1] - poppush[0];
+	}
     }
 
-    /**
-     * Gets a printable representation of the opcode with its
-     * parameters.  This will not include the destination for jump
-     * instructions, since this information is not stored inside the
-     * instruction.  
-     */
-    public final String getDescription() {
-	return toString();
+    public Instruction findMatchingPush() {
+	int count = 0;
+	Instruction instr = this;
+	int poppush[] = new int[2];
+	while (true) {
+	    if (instr.preds != null)
+		return null;
+	    instr = instr.prevByAddr;
+	    if (instr == null || instr.succs != null || instr.doesAlwaysJump())
+		return null;
+
+	    instr.getStackPopPush(poppush);
+	    if (count < poppush[1]) {
+		return count == 0 ? instr : null;
+	    }
+	    count += poppush[0] - poppush[1];
+	}
+    }
+
+    public String getDescription() {
+	StringBuffer result = new StringBuffer(String.valueOf(addr))
+	    .append('_').append(Integer.toHexString(hashCode()))
+	    .append(": ").append(opcodeString[opcode]);
+	if (opcode != opc_lookupswitch) {
+	    if (hasLocalSlot())
+		result.append(' ').append(getLocalSlot());
+	    if (succs != null)
+		result.append(' ').append(((Instruction) succs).addr);
+	    if (objData != null)
+		result.append(' ').append(objData);
+	    if (opcode == opc_multianewarray)
+		result.append(' ').append(getDimensions());
+	} else {
+	    int[] values = getValues();
+	    Instruction[] succs = getSuccs();
+	    for (int i=0; i < values.length; i++) {
+		result.append(' ').append(values[i]).append("->")
+		    .append(((Instruction) succs[i]).addr);
+	    }
+	    result.append(' ').append("default: ")
+		.append(((Instruction) succs[values.length]).addr);
+	}
+	return result.toString();
     }
 
     public String toString() {
-	return opcodeString[getOpcode()];
+        return "" + addr + "_" + Integer.toHexString(hashCode());
     }
 
-    /**
-     * stackDelta contains \100 if stack count of opcode is variable
+    private final static String stackDelta = 
+	"\000\010\010\010\010\010\010\010\010\020\020\010\010\010\020\020\010\010\010\010\020\010\020\010\020\010\010\010\010\010\020\020\020\020\010\010\010\010\020\020\020\020\010\010\010\010\012\022\012\022\012\012\012\012\001\002\001\002\001\001\001\001\001\002\002\002\002\001\001\001\001\002\002\002\002\001\001\001\001\003\004\003\004\003\003\003\003\001\002\021\032\043\042\053\064\022\012\024\012\024\012\024\012\024\012\024\012\024\012\024\012\024\012\024\012\024\011\022\011\022\012\023\012\023\012\023\012\024\012\024\012\024\000\021\011\021\012\012\022\011\021\021\012\022\012\011\011\011\014\012\012\014\014\001\001\001\001\001\001\002\002\002\002\002\002\002\002\000\010\000\001\001\001\002\001\002\001\000\100\100\100\100\100\100\100\100\177\010\011\011\011\001\011\011\001\001\177\100\001\001\000\010";
+
+    /* stackDelta contains \100 if stack count of opcode is variable
      * \177 if opcode is illegal, or 8*stack_push + stack_pop otherwise
-     * The string is created by scripts/createStackDelta.pl
+     * The above values are extracted from following list with: 
+     *    perl -ne'/"(.*)"/ and print $1' 
+     *
+     * "\000"                             // nop
+     * "\010\010\010\010\010\010\010\010" // aconst_null, iconst_m?[0-5]
+     * "\020\020\010\010\010\020\020"     // [lfd]const_[0-2]
+     * "\010\010\010\010\020"             // sipush bipush ldcx
+     * "\010\020\010\020\010"             // [ilfda]load
+     * "\010\010\010\010"
+     * "\020\020\020\020"
+     * "\010\010\010\010"
+     * "\020\020\020\020"
+     * "\010\010\010\010"
+     * "\012\022\012\022\012\012\012\012" // [ilfdabcs]aload
+     * "\001\002\001\002\001"             // [ilfda]store
+     * "\001\001\001\001"
+     * "\002\002\002\002"
+     * "\001\001\001\001"
+     * "\002\002\002\002"
+     * "\001\001\001\001"
+     * "\003\004\003\004\003\003\003\003" // [ilfdabcs]astore
+     * "\001\002"                         // pop
+     * "\021\032\043\042\053\064"         // dup2?(_x[12])?
+     * "\022"                             // swap
+     * "\012\024\012\024"                 // [ilfd]add
+     * "\012\024\012\024"                 // [ilfd]sub
+     * "\012\024\012\024"                 // [ilfd]mul
+     * "\012\024\012\024"                 // [ilfd]div
+     * "\012\024\012\024"                 // [ilfd]rem
+     * "\011\022\011\022"                 // [ilfd]neg
+     * "\012\023\012\023\012\023"         // [il]u?sh[lr]
+     * "\012\024\012\024\012\024"         // [il](and|or|xor)
+     * "\000"                             // opc_iinc
+     * "\021\011\021"                     // i2[lfd]
+     * "\012\012\022"                     // l2[ifd]
+     * "\011\021\021"                     // f2[ild]
+     * "\012\022\012"                     // d2[ilf]
+     * "\011\011\011"                     // i2[bcs]
+     * "\014\012\012\014\014"             // [lfd]cmp.?
+     * "\001\001\001\001\001\001"         // if..
+     * "\002\002\002\002\002\002"         // if_icmp..
+     * "\002\002"                         // if_acmp..
+     * "\000\010\000\001\001"             // goto,jsr,ret, .*switch
+     * "\001\002\001\002\001\000"         // [ilfda]?return
+     * "\100\100\100\100"                 // (get/put)(static|field)
+     * "\100\100\100\100"                 // invoke.*
+     * "\177\010\011\011\011"             // 186 - 190
+     * "\001\011\011\001\001"             // 191 - 195
+     * "\177\100\001\001"                 // 196 - 199
+     * "\000\010"                         // goto_w, jsr_w
      */
-    final static String stackDelta = 
-	"\000\010\010\010\010\010\010\010\010\020\020\010\010\010\020\020\010\010\010\010\020\010\020\010\020\010\010\010\010\010\020\020\020\020\010\010\010\010\020\020\020\020\010\010\010\010\012\022\012\022\012\012\012\012\001\002\001\002\001\001\001\001\001\002\002\002\002\001\001\001\001\002\002\002\002\001\001\001\001\003\004\003\004\003\003\003\003\001\002\021\032\043\042\053\064\022\012\024\012\024\012\024\012\024\012\024\012\024\012\024\012\024\012\024\012\024\011\022\011\022\012\023\012\023\012\023\012\024\012\024\012\024\000\021\011\021\012\012\022\011\021\021\012\022\012\011\011\011\014\012\012\014\014\001\001\001\001\001\001\002\002\002\002\002\002\002\002\000\000\000\001\001\001\002\001\002\001\000\100\100\100\100\100\100\100\100\177\010\011\011\011\001\011\011\001\001\177\100\001\001\000\000";
 }

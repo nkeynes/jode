@@ -19,6 +19,7 @@
 
 package jode.expr;
 import jode.type.Type;
+import jode.decompiler.Options;
 import jode.decompiler.TabbedPrintWriter;
 
 public class UnaryOperator extends Operator {
@@ -57,6 +58,8 @@ public class UnaryOperator extends Operator {
     public void dumpExpression(TabbedPrintWriter writer)
 	throws java.io.IOException {
 	writer.print(getOperatorString());
+	if ((Options.outputStyle & Options.GNU_SPACING) != 0)
+	    writer.print(" ");
 	subExpressions[0].dumpExpression(writer, 700);
     }
 }

@@ -1,8 +1,10 @@
 ## Input file for automake to generate the Makefile.in used by configure
 
-JAVADEP = $(PERL) -w -s $(top_srcdir)/scripts/javaDependencies.pl \
-   -subdir=$(subdir) -dependdir=$(top_builddir) \
-   -classpath=$(top_builddir):$(top_srcdir) -depfile=Makefile.dep
+JAR = @JAR@
+JAVAC = @JAVAC@
+JAVADEP = $(top_builddir)/javaDependencies.pl -subdir=$(subdir)\
+   -dependdir=$(top_builddir) -classpath=$(top_builddir):$(top_srcdir) \
+   -depfile=Makefile.dep
 CLASSPATH = @CLASSPATH@
 CLASSLIB = @CLASSLIB@
 SUBSTCP = @SUBSTCP@

@@ -1,14 +1,17 @@
 <?php require("header.inc"); ?>
 <h1>Download</h1>
 
-<p>Click <?php sflink("project/filelist.php")?>here</a> to download
-the latest released source code of <i>JODE</i> .  You need several
-other packages to build <i>JODE</i>, check the <?php selflink("links")
-?>links page</a>. </p>
+<p>Jode is available in the download section.  Click <?php
+sflink("project/filelist.php")?>here</a> to download the latest
+released source code of <i>JODE</i>
+
+<p>If you download the source code, you need several other packages to
+build <i>JODE</i>, check the <?php selflink("links") ?>links
+page</a>. </p>
 
 <p>The simplest way to get it, especially for non unix users, is in
 precompiled form, though.  I have two jar archives at the <a
-href="ftp://jode.sourceforge.net/pub/jode">ftp server</a>.  You may
+href="ftp://jode.sourceforge.net/pub/jode">xftp server</a>.  You may
 need to press shift while clicking on the link, depending on your
 browser.
 
@@ -28,20 +31,12 @@ use the swing interface, you have to download swing separately. </li>
 
 <h1>CVS Repository</h1>
 
-<p>You can get the latest sources from the <?php sflink("cvs/") ?> CVS
-repository</a>.  They may not always compile, though.  If you want an
-older version you can use the <code>-r</code> option:</p>
-<ul>
-<li><code>-r jode_1_0_93</code>: gives you the version 1.0.93</li>
-<li><code>-r branch_1_1</code>: gives you the latest version that will
-become 1.1</li>
-</ul>
-
-<p>To build the sources from CVS change to the main directory where
-the <code>configure.in</code> file resides and run
+<p>You can get the latest sources from the <?php sflink("cvs/") ?>
+CVS repository</a>.
+Follow the instruction on that page; use <code>jode</code> as
+<i>modulename</i>.  Then change to the directory jode and run
 
 <pre>aclocal && automake -a && autoconf</pre>
 
 Afterwards follow the instruction in the INSTALL file.  </p>
-
 <?php require("footer.inc"); ?>

@@ -27,7 +27,7 @@ import java.util.Hashtable;
  *
  * @author Jochen Hoenicke
  */
-class GrowableConstantPool extends ConstantPool {
+public class GrowableConstantPool extends ConstantPool {
     Hashtable entryToIndex = new Hashtable(); 
     boolean written;
 
@@ -243,8 +243,6 @@ class GrowableConstantPool extends ConstantPool {
     public void write(DataOutputStream stream) 
 	throws IOException {
 	written = true;
-	if (count > 65536)
-	    throw new ClassFormatError("Too many constants");
 	stream.writeShort(count);
 	for (int i=1; i< count; i++) {
 	    int tag = tags[i];

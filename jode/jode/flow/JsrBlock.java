@@ -33,23 +33,20 @@ public class JsrBlock extends StructuredBlock {
      * The inner block that jumps to the subroutine.
      */
     StructuredBlock innerBlock;
+    boolean good = false;
 
-    public JsrBlock() {
-	innerBlock = new EmptyBlock();
+    public JsrBlock(Jump subroutine, Jump next) {
+	innerBlock = new EmptyBlock(subroutine);
 	innerBlock.outer = this;
+	setJump(next);
+    }
+    
+    public void setGood(boolean g) {
+	good = g;
     }
 
-    /**
-     * Sets the successors of this structured block.  This should be only
-     * called once, by FlowBlock.setSuccessors().
-     */
-    public void setSuccessors(Jump[] jumps) {
-	if (jumps.length != 2) {
-	    /* A conditional block can only exactly two jumps. */
-	    throw new IllegalArgumentException("Not exactly two jumps.");
-	}
-        innerBlock.setJump(jumps[0]);
-	setJump(jumps[1]);
+    public boolean isGood() {
+	return good;
     }
 
     /* The implementation of getNext[Flow]Block is the standard

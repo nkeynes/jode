@@ -1,8 +1,10 @@
 ## Input file for automake to generate the Makefile.in used by configure
 
-JAVADEP = $(PERL) -w -s $(top_srcdir)/scripts/javaDependencies.pl \
-   -subdir=$(subdir) -dependdir=$(top_builddir) \
-   -classpath=$(top_builddir):$(top_srcdir) -depfile=Makefile.dep
+JAR = @JAR@
+JAVAC = @JAVAC@
+JAVADEP = $(top_builddir)/javaDependencies.pl -subdir=$(subdir)\
+   -dependdir=$(top_builddir) -classpath=$(top_builddir):$(top_srcdir) \
+   -depfile=Makefile.dep
 CLASSPATH = @CLASSPATH@
 CLASSLIB = @CLASSLIB@
 SUBSTCP = @SUBSTCP@
@@ -10,7 +12,6 @@ FULL_CLASSPATH := $(shell $(SUBSTCP) $(top_srcdir):$(top_builddir):$(CLASSPATH):
 
 MY_JAVA_FILES = \
   ConstantAnalyzer.java \
-  IdentityRenamer.java \
   KeywordRenamer.java \
   LocalOptimizer.java \
   ModifierMatcher.java \
@@ -22,6 +23,7 @@ MY_JAVA_FILES = \
   StrongRenamer.java \
   UniqueRenamer.java \
   WildCard.java
+#  LocalizeFieldTransformer.java
 
 noinst_DATA = $(MY_JAVA_FILES:.java=.class)
 EXTRA_DIST = $(MY_JAVA_FILES)
