@@ -81,7 +81,9 @@ public class IIncOperator extends Operator
 
     public void dumpExpression(TabbedPrintWriter writer)
 	throws java.io.IOException {
-	subExpressions[0].dumpExpression(writer, 950);
+	writer.startOp(writer.NO_PAREN, 2);
+	subExpressions[0].dumpExpression(writer);
+	writer.endOp();
 	writer.print(getOperatorString() + value);
     }
 }

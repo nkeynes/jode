@@ -201,7 +201,7 @@ public final class InvokeOperator extends Operator
     }
 
     /**
-     * Makes a non void expression out of this store instruction.
+     * Makes a non void expression, in case this is a constructor.
      */
     public void makeNonVoid() {
         if (type != Type.tVoid)

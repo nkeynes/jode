@@ -361,15 +361,13 @@ public class LocalInfo implements Declarable {
     }
 
     public boolean isConstant() {
-	LocalInfo li = getLocalInfo();
-	Enumeration enum = li.operators.elements();
-	int writes = 0;
-	while (enum.hasMoreElements()) {
-	    if (((LocalVarOperator) enum.nextElement()).isWrite())
-		writes++;
-	}
-	if (writes > 1)
-	    return false;
+	/* Checking if a local can be declared final is tricky, 
+	 * since it can also be the case if it is written in
+	 * the "then" and "else" part of an if statement.
+	 *
+	 * We return true now, otherwise some code would not be
+	 * decompilable.
+	 */
 	return true;
     }
 
