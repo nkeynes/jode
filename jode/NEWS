@@ -1,6 +1,5 @@
-New in 1.2
-* New bytecode interface
-* Faster and better flow analyzation
+New in 1.1.1
+* Only bug fixes
 
 New in 1.1
 * break long lines

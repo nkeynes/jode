@@ -43,8 +43,7 @@ InnerCompat.java \
 NestedAnon.java 
 do
     cp $srcdir/$testclass $TEMP
-    $PERL $top_srcdir/scripts/jcpp.pl -D$compiler -D$compiler$version \
-         $TEMP/$testclass
+    $top_srcdir/jcpp -D$compiler -D$compiler$version $TEMP/$testclass
     CLASSPATH=$CLASSPATH:$CLASSLIB $JAVAC $JFLAGS -d $TEMP $TEMP/$testclass
     CLASSPATH=$CLASSPATH:$CLASSLIB $JAVA jode.Decompiler \
          --classpath=$TEMP --dest=$TEMP ${testclass%.java} > $testclass.log 2>&1
