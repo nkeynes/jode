@@ -855,6 +855,7 @@ public class BytecodeInfo extends BinaryInfo implements Opcodes {
 		     */
 		    handlersLength--;
 		    i--;
+		    continue;
 		}
 
 		if (exceptionHandlers[i].start.getAddr()
