@@ -1,0 +1,53 @@
+Tue Jan 30 15:35:19 2001  Jochen Hoenicke  <jochen@gnu.org>
+
+	* jode/decompiler/TabbedPrintWriter.java: Better gnu style handling:
+	(openBraceClass) (closeBraceClass)
+	(openBraceNoIndent) (closeBraceNoIndent): new functions.
+	(closeBraceNoSpace): Removed.
+	* jode/decompiler/Options.java (GNU_SPACING): new constant.
+	(GNU_STYLE): changed to include GNU_SPACING.
+	* jode/decompiler/ClassAnalyzer.java.in (dumpSource): Use
+ 	open/closeBraceClass.
+	* jode/decompiler/MethodAnalyzer.java.in (dumpSource): Use
+ 	open/closeBraceNoIndent.  Insert a space for GNU_SPACING.
+	* jode/decompiler/InvokeOperator.java.in (dumpExpression): Insert
+ 	a space for GNU_SPACING, use open/closeBraceClass for inner
+ 	classes.
+	* jode/decompiler/UnaryOperator.java (dumpExpression): Insert
+ 	a space for GNU_SPACING.
+
+Tue Jan 30 15:28:10 2001  Jochen Hoenicke  <jochen@gnu.org>
+
+	Added pascal style from Rolf Howarth <rolf@squarebox.co.uk>
+	* jode/decompiler/Options.java (PASCAL_STYLE): new constant.
+	(BRACE_FLUSH_LEFT): dito.
+	* jode/decompiler/Decompiler.java (setOption): detect pascal option.
+	* jode/decompiler/Main.java (main): dito.
+	* jode/decompiler/TabbedPrintWriter.java (openBrace,
+ 	openBraceContinue, closeBrace, closeBraceNoSpace,
+ 	closeBraceContinue): handle flush left.
+	
+Tue Jan 30 00:28:10 2001  Jochen Hoenicke  <jochen@gnu.org>
+
+	* jode/type/NullType.java (intersection): Removed, since the
+ 	version in ReferenceType is more correct.  Before
+ 	tNull.isOfType(tRange(X,tNull)) returned false, which lead to
+ 	incorrect behaviour in InvokeOperator.needsCast.
+	* jode/decompiler/FieldAnalyzer.java.in (dumpSource): Removed the
+ 	"= null" hack for final fields; it was not correct, since the
+ 	field could be initialized in a constructor.
+	* jode/decompiler/TabbedPrintWriter.java (BreakPoint.endOp):
+	Simplified the code, copy options always from child.
+	* jode/jvm/SyntheticAnalyzer.java.in (unifyParam): new field.
+	(checkConstructorAccess): Allow the special Parameter, whose
+ 	purpose is to distinguish the wrapper from the real constructor
+ 	and give him a "$" in the type signature, to appear at every
+ 	position.  It doesn't appear at position 1 for inner classes.
+	Store the position in unifyParam.
+	* jode/expr/InvokeOperator.java (isGetClass): Allow the method to
+ 	be declared inside an outer class:  We simply check if we can get
+	the method analyzer.
+	(simplify): handle unifyParam.
+	* jode/expr/PopOperator.java (getBreakPenalty): return penalty of
+ 	inner expression. (dumpExpression): Call dumpExpression of
+ 	subexpression immediately without priority.

@@ -120,17 +120,15 @@ public class TabbedPrintWriter {
 	public void endOp(int pos) {
 	    endPos = pos;
 	    if (childBPs.size() == 1) {
-		BreakPoint child = 
-		    (BreakPoint) currentBP.childBPs.elementAt(0);
-		if (child.startPos == -1) {
-		    startPos = endPos = -1;
-		    childBPs = null;
-		} else if (child.startPos == currentBP.startPos
-			   && child.endPos == currentBP.endPos) {
-		    if (options == DONT_BREAK)
-			options = child.options;
-		    childBPs = child.childBPs;
-		}
+		/* There is no breakpoint in this op, replace this with
+		 * our child, if possible.
+		 */
+		BreakPoint child = (BreakPoint) childBPs.elementAt(0);
+		options = child.options;
+		startPos = child.startPos;
+		endPos = child.endPos;
+		breakPenalty = child.breakPenalty;
+		childBPs = child.childBPs;
 	    }
 	}
 
@@ -746,8 +744,34 @@ public class TabbedPrintWriter {
 	} else {
 	    if (currentLine.length() > 0)
 		println();
-	    if (currentIndent > 0)
+	    if ((Options.outputStyle & Options.BRACE_FLUSH_LEFT) == 0
+		&& currentIndent > 0)
 		tab();
+	    println("{");
+	}
+    }
+
+    public void openBraceClass() {
+	if (currentLine.length() > 0) {
+	    if ((Options.outputStyle & Options.BRACE_AT_EOL) != 0)
+		print(" ");
+	    else
+		println();
+	}
+	println("{");
+    }
+
+    /**
+     * Print a opening brace with the current indentation style.
+     * Called at the end the line of a method declaration.
+     */
+    public void openBraceNoIndent() {
+	if ((Options.outputStyle & Options.BRACE_AT_EOL) != 0) {
+	    print(currentLine.length() > 0 ? " {" : "{");
+	    println();
+	} else {
+	    if (currentLine.length() > 0)
+		println();
 	    println("{");
 	}
     }
@@ -763,7 +787,8 @@ public class TabbedPrintWriter {
 	else {
 	    if (currentLine.length() > 0)
 		println();
-	    if (currentIndent > 0)
+	    if ((Options.outputStyle & Options.BRACE_FLUSH_LEFT) == 0
+		&& currentIndent > 0)
 		tab();
 	    println("{");
 	}
@@ -774,19 +799,14 @@ public class TabbedPrintWriter {
 	    print("} ");
 	else {
 	    println("}");
-	    if (currentIndent > 0)
+	    if ((Options.outputStyle & Options.BRACE_FLUSH_LEFT) == 0
+		&& currentIndent > 0)
 		untab();
 	}
     }
 
-    public void closeBraceNoSpace() {
-	if ((Options.outputStyle & Options.BRACE_AT_EOL) != 0)
-	    print("}");
-	else {
-	    println("}");
-	    if (currentIndent > 0)
-		untab();
-	}
+    public void closeBraceClass() {
+	print("}");
     }
 
     public void closeBrace() {
@@ -794,9 +814,14 @@ public class TabbedPrintWriter {
 	    println("}");
 	else {
 	    println("}");
-	    if (currentIndent > 0)
+	    if ((Options.outputStyle & Options.BRACE_FLUSH_LEFT) == 0
+		&& currentIndent > 0)
 		untab();
 	}
+    }
+
+    public void closeBraceNoIndent() {
+	println("}");
     }
 
     public void flush() {

@@ -398,12 +398,12 @@ public final class InvokeOperator extends Operator
      * @return true if this is the magic class$ method, false otherwise.
      */
     public boolean isGetClass() {
-	if (isThis()) {
-	    SyntheticAnalyzer synth = getMethodAnalyzer().getSynthetic();
-	    if (synth != null && synth.getKind() == SyntheticAnalyzer.GETCLASS)
-		return true;
-	}
-	return false;
+	MethodAnalyzer mana = getMethodAnalyzer();
+	if (mana == null)
+	    return false;
+	SyntheticAnalyzer synth = getMethodAnalyzer().getSynthetic();
+	return (synth != null
+		&& synth.getKind() == SyntheticAnalyzer.GETCLASS);
     }
 
     class Environment extends SimpleRuntimeEnvironment {
@@ -572,6 +572,7 @@ public final class InvokeOperator extends Operator
 	if (getMethodAnalyzer() != null) {
 	    SyntheticAnalyzer synth = getMethodAnalyzer().getSynthetic();
 	    if (synth != null) {
+		int unifyParam = synth.getUnifyParam();
 		Expression op = null;
 		switch (synth.getKind()) {
 		case SyntheticAnalyzer.ACCESSGETFIELD:
@@ -601,9 +602,9 @@ public final class InvokeOperator extends Operator
 					    synth.getReference());
 		    break;
 		case SyntheticAnalyzer.ACCESSCONSTRUCTOR:
-		    if (subExpressions[1] instanceof ConstOperator
+		    if (subExpressions[unifyParam] instanceof ConstOperator
 			&& ((ConstOperator) 
-			    subExpressions[1]).getValue() == null) {
+			    subExpressions[unifyParam]).getValue() == null) {
 			op = new InvokeOperator(methodAnalyzer, CONSTRUCTOR, 
 						synth.getReference());
 		    }
@@ -613,7 +614,7 @@ public final class InvokeOperator extends Operator
 		if (op != null) {
 		    if (subExpressions != null) {
 			for (int i=subExpressions.length; i-- > 0; ) {
-			    if (i == 1 && synth.getKind() 
+			    if (i == unifyParam && synth.getKind() 
 				== SyntheticAnalyzer.ACCESSCONSTRUCTOR)
 				// skip the null param.
 				continue;
@@ -675,9 +676,10 @@ public final class InvokeOperator extends Operator
 		}
 		for (int p = offset; p < paramTypes.length; p++) {
 		    if (!paramTypes[p]
-			.isOfType(Type.tSubType(otherParamTypes[p-offset])))
+			.isOfType(Type.tSubType(otherParamTypes[p-offset]))){
 			/* No conflict here */
 			continue next_method;
+		    }
 		}
 		/* There is a conflict that can be resolved by a cast. */
 		return true;
@@ -1103,6 +1105,8 @@ public final class InvokeOperator extends Operator
 
 	writer.endOp();
 	writer.breakOp();
+	if ((Options.outputStyle & Options.GNU_SPACING) != 0)
+	    writer.print(" ");
 	writer.print("(");
 	writer.startOp(writer.EXPL_PAREN, 0);
 	boolean first = true;
@@ -1136,11 +1140,11 @@ public final class InvokeOperator extends Operator
 	     * dump the source code of the anonymous class.  
 	     */
 	    Object state = writer.saveOps();
-	    writer.openBrace();
+	    writer.openBraceClass();
 	    writer.tab();
 	    clazzAna.dumpBlock(writer);
 	    writer.untab();
-	    writer.closeBraceNoSpace();
+	    writer.closeBraceClass();
 	    writer.restoreOps(state);
 	}
     }

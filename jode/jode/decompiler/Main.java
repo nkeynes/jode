@@ -258,6 +258,8 @@ public class Main extends Options {
 		    outputStyle = SUN_STYLE;
 		else if ("gnu".startsWith(arg))
 		    outputStyle = GNU_STYLE;
+		else if ("pascal".startsWith(arg))
+		    outputStyle = Options.PASCAL_STYLE;
 		else {
 		    GlobalOptions.err.println
 			("jode.decompiler.Main: Unknown style `"+arg+"'.");
