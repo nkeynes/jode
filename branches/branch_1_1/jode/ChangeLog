@@ -1,9 +1,18 @@
+2001-04-09  Jochen Hoenicke  <jochen@gnu.org>
+
+	* jode/bytecode/SearchPath.java: Bug fixes from Joe Bronkema:
+	(exists):  Don't replace '/' with fileSeparator in original
+	filename; make a copy instead.
+	(getFile): likewise.
+	(isDirectory): likewise.
+	(listFiles):  Reset fileNr when a new directory is read.
+
 2001-02-28  Jochen Hoenicke  <jochen@gnu.org>
 
 	* acinclude.m4 (JODE_CHECK_CLASS): Changed "test -e" to "-f" since
 	-e is not supported on all architectures (Solaris) and -f is more
 	correct anyway. 
-	Reported by Erik Modén <Erik.Moden@emw.ericsson.se>.
+	Reported by Erik Modén.
 
 2001-02-27  Jochen Hoenicke  <jochen@gnu.org>
 
