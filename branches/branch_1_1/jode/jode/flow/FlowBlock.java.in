@@ -1729,6 +1729,8 @@ public class FlowBlock {
 		}
 	    }
             return strw.toString();
+        } catch (RuntimeException ex) {
+	    return super.toString() + ": (RUNTIME EXCEPTION)";
         } catch (java.io.IOException ex) {
             return super.toString();
         }
