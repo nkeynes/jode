@@ -109,7 +109,7 @@ public class ModifierMatcher implements IdentifierMatcher, OptionHandler, Clonea
 		    : str.equals("NATIVE") ? Modifier.NATIVE
 		    : str.equals("STATIC") ? Modifier.STATIC
 ///#ifdef JDK12
-///		    : str.equals("STRICT") ? Modifier.STRICT
+		    : str.equals("STRICT") ? Modifier.STRICT
 ///#endif
 		    : str.equals("SYNCHRONIZED") ? Modifier.SYNCHRONIZED
 		    : str.equals("TRANSIENT") ? Modifier.TRANSIENT

@@ -38,7 +38,7 @@ import @COLLECTIONS@.TreeMap;
 import @COLLECTIONEXTRA@.UnsupportedOperationException;
 
 ///#ifdef JDK12
-///import @COLLECTIONS@.WeakHashMap;
+import @COLLECTIONS@.WeakHashMap;
 ///#endif
 
 public class ClassBundle implements OptionHandler {
@@ -74,9 +74,9 @@ public class ClassBundle implements OptionHandler {
     }
 
 ///#ifdef JDK12
-///    private static final Map aliasesHash = new WeakHashMap();
+    private static final Map aliasesHash = new WeakHashMap();
 ///#else
-    private static final Map aliasesHash = new HashMap();
+///    private static final Map aliasesHash = new HashMap();
 ///#endif
     private static final Map clazzCache = new HashMap();
     private static final Map referenceCache = new HashMap();

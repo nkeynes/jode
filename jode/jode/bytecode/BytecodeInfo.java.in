@@ -847,6 +847,21 @@ public class BytecodeInfo extends BinaryInfo implements Opcodes {
 		int index = input.readUnsignedShort();
 		exceptionHandlers[i].type = (index == 0) ? null
 		    : cp.getClassName(index);
+
+		if (exceptionHandlers[i].catcher.getOpcode() == opc_athrow) {
+		    /* There is an obfuscator, which inserts bogus
+		     * exception entries jumping directly to a throw
+		     * instruction.  Remove those handlers.
+		     */
+		    handlersLength--;
+		    i--;
+		}
+	    }
+	    if (handlersLength < exceptionHandlers.length) {
+		Handler[] newHandlers = new Handler[handlersLength];
+		System.arraycopy(exceptionHandlers, 0, newHandlers, 0,
+				 handlersLength);
+		exceptionHandlers = newHandlers;
 	    }
 	}
 	readAttributes(cp, input, FULLINFO);
