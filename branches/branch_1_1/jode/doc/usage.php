@@ -90,14 +90,15 @@ you won't find a save option there.</p>
 
 <p>If you want to integrate <i>JODE</i> into your own java program,
 you can use the <a
-href="Decompiler.java"><code>jode.decompiler.Decompiler</code></a>
+href="http://cvs.sourceforge.net/cgi-bin/viewcvs.cgi/jode/jode/jode/decompiler/Decompiler.java?rev=jode_1_1&content-type=text/vnd.viewcvs-markup"
+><code>jode.decompiler.Decompiler</code></a>
 class.  Note that the GPL only allows you to integrate <i>JODE</i>
 into GPL programs.  Please tell me if you use <i>JODE</i> in this
 way.</p>
 
-<p>You may use this <a
-href="ftp://jode.sourceforge.net/pub/jode/jode-embedded.jar">stripped
-down jar archive</a> containing all necessary classes.</p>
+<p>You should ship <code>jode-1.1-embedded.jar</code> with your program.  This jar file is
+available in the <? sflink("project/filelist.php") ?>download area</a>.
+It works only under JDK&nbsp;1.2 and above.</p>
 
 <a name="optimizer"><h1>Using the Obfuscator</h1>
 
