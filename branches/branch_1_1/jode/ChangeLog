@@ -1,7 +1,18 @@
+2001-07-10  Jochen Hoenicke  <jochen@gnu.org>
+
+	* jode/obfuscator/modules/SimpleAnalyzer.java.in:
+	Ported fix from ConstantAnalyzer:
+ 	(canonizeReference): for interfaces call canonizeIfaceReference.
+	(canonizeIfaceReference): new method.
+	* jode/obfuscator/modules/ConstantAnalyzer.java.in:
+	made sub class of SimpleAnalyzer.
+	(canonizeReference): Removed, since its inherited.
+	(canonizeIfaceReference): dito.
+
 2001-07-08  Jochen Hoenicke  <jochen@gnu.org>
 
 	* jode/bytecode/BytecodeInfo.java.in (calculateMaxStack): Handle
-	special case for empty method.  Previous code would just crash.
+ 	special case for empty method.  Previous code would just crash.
 
 2001-06-15  Jochen Hoenicke  <jochen@gnu.org>
 

@@ -34,6 +34,21 @@ import @COLLECTIONS@.ListIterator;
 
 public class SimpleAnalyzer implements CodeAnalyzer, Opcodes {
 
+    private ClassInfo canonizeIfaceRef(ClassInfo clazz, Reference ref) {
+	while (clazz != null) {
+	    if (clazz.findMethod(ref.getName(), ref.getType()) != null)
+		return clazz;
+	    ClassInfo[] ifaces = clazz.getInterfaces();
+	    for (int i = 0; i < ifaces.length; i++) {
+		ClassInfo realClass = canonizeIfaceRef(ifaces[i], ref);
+		if (realClass != null)
+		    return realClass;
+	    }
+	    clazz = clazz.getSuperclass();
+	}
+	return null;
+    }
+
     public Identifier canonizeReference(Instruction instr) {
 	Reference ref = instr.getReference();
 	Identifier ident = Main.getClassBundle().getIdentifier(ref);
@@ -58,7 +73,9 @@ public class SimpleAnalyzer implements CodeAnalyzer, Opcodes {
 		    (clName.substring(1, clName.length()-1)
 		     .replace('/','.'));
 	    }
-	    if (instr.getOpcode() >= opc_invokevirtual) {
+	    if (instr.getOpcode() == opc_invokeinterface) {
+		clazz = canonizeIfaceRef(clazz, ref);
+	    } else if (instr.getOpcode() >= opc_invokevirtual) {
 		while (clazz != null
 		       && clazz.findMethod(ref.getName(), 
 					   ref.getType()) == null)
