@@ -4,8 +4,6 @@ Decompiler:
  - outline inlined methods.
  - remove string decrypt method.
  - remove synthetic methods if and only if all calls to them are resolved.
- ~ handle try catch more thouroughly/safely.
- ~ decompile jode.jvm.Interpreter (hand optimized bytecode)
 
 Obfuscator:
  - flow obfuscation/optimization.
@@ -20,9 +18,8 @@ DeObfuscator:
  
 User Interface:
  - make a nice user interface:
-   ~ list classnames: toggable between class hierarchie/package hierarchie.
    - list fields/method of selected class.
-   - show decompilation of selected method.
+   - show only decompilation of selected method.
    - show usage of method/fields.
  - syntax highlighting, hyper links etc.  
 	(look at java.swing.JEditorPane or at Java Insight)
@@ -30,3 +27,5 @@ User Interface:
 
 Internal:
  - clean up package hierarchy, esp. expr, flow and decompiler.
+ - make the class names more precise, e.g. StructuredBlock is Statement,
+   FlowBlock is BasicBlock.
