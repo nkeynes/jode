@@ -949,6 +949,16 @@ public class BytecodeInfo extends BinaryInfo implements Opcodes {
 		    todo.push(next);
 		}
 	    }
+	    for (int i=0; i< exceptionHandlers.length; i++) {
+		if (exceptionHandlers[i].start.compareTo(instr) <= 0
+		    && exceptionHandlers[i].end.compareTo(instr) >= 0) {
+		    int catcher = exceptionHandlers[i].catcher.getAddr();
+		    if (stackHeights[catcher] == -1) {
+			stackHeights[catcher] = 1;
+			todo.push(exceptionHandlers[i].catcher);
+		    }
+		}
+	    }
 	}
 // 	System.err.println("New maxStack: "+maxStack+" Locals: "+maxLocals);
     }
