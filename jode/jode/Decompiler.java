@@ -155,6 +155,8 @@ public class Decompiler {
             } else if (params[i].equals("--import")) {
                 importPackageLimit = Integer.parseInt(params[++i]);
                 importClassLimit = Integer.parseInt(params[++i]);
+            } else if (params[i].equals("--classpath")) {
+                classPath = params[++i];
             } else if (params[i].equals("--cp")) {
                 classPath = params[++i];
             } else if (params[i].equals("--")) {
