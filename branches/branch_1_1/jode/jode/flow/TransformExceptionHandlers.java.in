@@ -387,7 +387,8 @@ public class TransformExceptionHandlers {
 		}
             }
         }
-	removeBadJSR(tryFlow, catchBlock, subRoutine);
+	if (tryFlow.getSuccessors().contains(subRoutine))
+	    removeBadJSR(tryFlow, catchBlock, subRoutine);
     }
 
     private void checkAndRemoveMonitorExit(FlowBlock tryFlow, 
@@ -505,7 +506,8 @@ public class TransformExceptionHandlers {
         }
 
 	if (subRoutine != null) {
-	    removeBadJSR(tryFlow, catchBlock, subRoutine);
+	    if (tryFlow.getSuccessors().contains(subRoutine))
+		removeBadJSR(tryFlow, catchBlock, subRoutine);
 	    tryFlow.mergeAddr(subRoutine);
 	}
     }

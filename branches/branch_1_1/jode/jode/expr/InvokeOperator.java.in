@@ -419,8 +419,10 @@ public final class InvokeOperator extends Operator
 				   Object cls, Object[] params) 
 	    throws InterpreterException, InvocationTargetException {
 	    if (cls == null && ref.getClazz().equals(classSig)) {
-		BytecodeInfo info = 
-		    ClassInfo.forName(ref.getClazz())
+		String clazzName = ref.getClazz();
+		clazzName = clazzName.substring(1, ref.getClazz().length() - 1)
+		    .replace('/', '.');
+		BytecodeInfo info = ClassInfo.forName(clazzName)
 		    .findMethod(ref.getName(), ref.getType())
 		    .getBytecode();
 		if (info != null)
