@@ -1011,8 +1011,7 @@ public class MethodAnalyzer implements Scope, ClassDeclarer {
 			    expr).getSubExpressions()[0];
 		if (expr instanceof ThisOperator) {
 		    outerValueArray[j] = 
-			new ThisOperator(((ThisOperator)
-					  expr).getClassInfo());
+			new ThisOperator(((ThisOperator) expr).getClassInfo());
 		    continue;
 		}
 		LocalInfo li = null;

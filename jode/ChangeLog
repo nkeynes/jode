@@ -1,4 +1,21 @@
-Tue Jan 30 15:35:19 2001  Jochen Hoenicke  <jochen@gnu.org>
+2001-01-31  Jochen Hoenicke  <jochen@gnu.org>
+
+	* jode/expr/Expression.java.in (updateParentTypes): Call setType,
+	instead of merging the types.  Other childs want to know about the
+	type change as well.
+	* jode/decompiler/LocalInfo.java (combineWith): Reorganized a bit,
+	but no changes.
+	* jode/expr/InvokeOperator.java.in (dumpExpression): Always print
+	the ThisOperator if a field is from a parent class of an outer
+	class is used.  And always qualify the this operator if not
+	innermost.
+
+2001-01-30  Jochen Hoenicke  <jochen@gnu.org>
+
+	* jode/jvm/SyntheticAnalyzer.java.in (checkConstructorAccess):
+	Allow the special unifyParam to be the last parameter.
+
+2001-01-30  Jochen Hoenicke  <jochen@gnu.org>
 
 	* jode/decompiler/TabbedPrintWriter.java: Better gnu style handling:
 	(openBraceClass) (closeBraceClass)
@@ -16,7 +33,7 @@ Tue Jan 30 15:35:19 2001  Jochen Hoenicke  <jochen@gnu.org>
 	* jode/decompiler/UnaryOperator.java (dumpExpression): Insert
  	a space for GNU_SPACING.
 
-Tue Jan 30 15:28:10 2001  Jochen Hoenicke  <jochen@gnu.org>
+2001-01-30  Jochen Hoenicke  <jochen@gnu.org>
 
 	Added pascal style from Rolf Howarth <rolf@squarebox.co.uk>
 	* jode/decompiler/Options.java (PASCAL_STYLE): new constant.
@@ -27,7 +44,7 @@ Tue Jan 30 15:28:10 2001  Jochen Hoenicke  <jochen@gnu.org>
  	openBraceContinue, closeBrace, closeBraceNoSpace,
  	closeBraceContinue): handle flush left.
 	
-Tue Jan 30 00:28:10 2001  Jochen Hoenicke  <jochen@gnu.org>
+2001-01-30  Jochen Hoenicke  <jochen@gnu.org>
 
 	* jode/type/NullType.java (intersection): Removed, since the
  	version in ReferenceType is more correct.  Before

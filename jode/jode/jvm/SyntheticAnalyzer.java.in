@@ -330,10 +330,11 @@ public class SyntheticAnalyzer implements Opcodes {
     public boolean checkConstructorAccess() {
 	ClassInfo clazzInfo = method.getClazzInfo();
 	BytecodeInfo bytecode = method.getBytecode();
+	String[] paramTypes
+	    = TypeSignature.getParameterTypes(method.getType());
 	Handler[] excHandlers = bytecode.getExceptionHandlers();
 	if (excHandlers != null && excHandlers.length != 0)
 	    return false;
-
 	Iterator iter = bytecode.getInstructions().iterator();
 
 	Instruction instr = (Instruction) iter.next();
@@ -343,8 +344,7 @@ public class SyntheticAnalyzer implements Opcodes {
 
 	    if (instr.getLocalSlot() > slot
 		&& unifyParam == -1 && params > 0
-		&& TypeSignature.getParameterTypes(method.getType())
-		[params - 1].charAt(0) == 'L') {
+		&& paramTypes[params - 1].charAt(0) == 'L') {
 		unifyParam = params;
 		params++;
 		slot++;
@@ -357,7 +357,12 @@ public class SyntheticAnalyzer implements Opcodes {
 		     || instr.getOpcode() == opc_dload) ? 2 : 1;
 	    instr = (Instruction) iter.next();
 	}
-	if (instr.getOpcode() == opc_invokespecial) {
+	if (params > 0 && instr.getOpcode() == opc_invokespecial) {
+
+	    if (unifyParam == -1 && params <= paramTypes.length
+		&& paramTypes[params - 1].charAt(0) == 'L')
+		unifyParam = params++;
+
 	    Reference ref = instr.getReference();
 	    String refClazz = ref.getClazz().substring(1);
 	    if (!(refClazz.substring(0, refClazz.length()-1)
@@ -371,6 +376,7 @@ public class SyntheticAnalyzer implements Opcodes {
 		|| unifyParam == -1
 		|| refType.getParameterTypes().length != params - 2)
 		return false;
+	
 	    instr = (Instruction) iter.next();
 	    if (instr.getOpcode() != opc_return)
 		return false;
