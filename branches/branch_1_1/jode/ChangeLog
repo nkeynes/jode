@@ -1,3 +1,11 @@
+2002-01-16  Jochen Hoenicke  <jochen@gnu.org>
+
+	Fixes by anonymous for SerializePreserver:
+	* jode/obfuscator/ClassIdentifier.java.in (isSerializable):
+	The Serializable interface lives in java.io not in java.lang.
+	* jode/obfuscator/modules/SerializePreserver.java.in:
+	This class needs to implement OptionHandler.
+
 2001-11-29  Jochen Hoenicke  <jochen@gnu.org>
 
 	* jode/obfuscator/modules/MultiIdentifierMatcher.java.in

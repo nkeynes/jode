@@ -264,7 +264,7 @@ public class ClassIdentifier extends Identifier {
     }
 
     public boolean isSerializable() {
-	return ClassInfo.forName("java.lang.Serializable")
+	return ClassInfo.forName("java.io.Serializable")
 	    .implementedBy(info);
     }
     public boolean hasSUID() {
