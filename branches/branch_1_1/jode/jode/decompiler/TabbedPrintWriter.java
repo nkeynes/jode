@@ -124,7 +124,7 @@ public class TabbedPrintWriter {
 		 * our child, if possible.
 		 */
 		BreakPoint child = (BreakPoint) childBPs.elementAt(0);
-		options = child.options;
+		options = Math.min(options, child.options);
 		startPos = child.startPos;
 		endPos = child.endPos;
 		breakPenalty = child.breakPenalty;

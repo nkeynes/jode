@@ -99,8 +99,6 @@ public class TransformConstructors {
 
     OuterValues outerValues;
 
-    boolean jikesAnonInner = false;
-    
     public TransformConstructors(ClassAnalyzer clazzAnalyzer,
 				 boolean isStatic, MethodAnalyzer[] cons) {
 	this.clazzAnalyzer = clazzAnalyzer;

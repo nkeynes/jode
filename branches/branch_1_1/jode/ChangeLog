@@ -1,3 +1,17 @@
+2001-02-08  Jochen Hoenicke  <jochen@gnu.org>
+
+	* jode/expr/StoreInstruction.java (dumpExpression): Java doesn't
+ 	allow parenthesis around left hand side, so use NO_PAREN and don't
+	call lhs.dumpExpression() with priority.
+	* jode/expr/PrePostFixOperator.java (dumpExpression): likewise.
+	* jode/expr/IIncOperator.java (dumpExpression): likewise.
+	* jode/flow/TransformConstructors.java (jikesAnonInner): Removed,
+	since it wasn't used: This information is stored in OuterValues
+	now.
+	* jode/decompiler/LocalInfo.java (isConstant): Always return true
+	so that inner classes that access final locals work, even if we
+	can't decide that the local can be final.
+
 2001-02-05  Jochen Hoenicke  <jochen@gnu.org>
 
 	* jode/expr/InvokeOperator.java.in (Environment.invokeMethod): 
