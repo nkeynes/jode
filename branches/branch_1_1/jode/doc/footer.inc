@@ -2,7 +2,7 @@
   <TR>
     <TD align="center"><SPAN class=footer>
       All trademarks and copyrights on this page are properties of their respective owners. <br>
-      Last updated on 27-May-2001, 
+      Last updated on 29-May-2001, 
       Copyright &copy; 1998-2001 by Jochen Hoenicke.
       Canonic URL is <a class=boldlink href="http://jode.sourceforge.net/">http://jode.sourceforge.net/</a></SPAN>
     </TD>

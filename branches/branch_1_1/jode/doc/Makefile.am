@@ -40,4 +40,4 @@ public_html_symlink:
 footer.inc: public_html_symlink
 
 $(srcdir)/%.html: %.php footer.inc header.inc menu.inc
-	lynx -source http://localhost/~$(LOGNAME)/$(JODE_PHP_DIR)/$(notdir $<)?extension=.html > $@
+	lynx -source http://localhost/~$(LOGNAME)/$(JODE_PHP_DIR)/$(notdir $<)?extension=html > $@
