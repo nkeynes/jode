@@ -1,3 +1,35 @@
+2001-08-12  Jochen Hoenicke  <jochen@gnu.org>
+
+	* jode/flow/FlowBlock.java.in: 
+	(checkConsistent): Allow lastModified in a finally block.
+
+	* jode/flow/TransformExceptionHandlers.java.in: Reworked exception
+	handlers again.  This time checked with javac 1.3, javac 1.1 and
+	jikes.
+	(checkTryCatchOrder): New method that was previously part of
+	analyze.
+	(analyze): Use checkTryCatchOrder.  Don't merge try and catch flow
+	blocks anymore, leave it to the analyzeXXX methods.
+	(mergeTryCatch): New method.
+	(analyzeCatchBlock): Get catchFlow as parameter. Call
+	mergeTryCatch.
+	(transformSubroutine): Handle POP-only subroutines.
+	(removeJSR): Don't do special case for catchBlock any more.  This
+	is because catchFlow isn't yet merged when this method is called.
+	(checkAndRemoveJSR): Likewise.
+	(checkAndRemoveMonitorExit): Likewise.  Merge subroutine only if
+	we are the only predecessor.
+	(analyzeSynchronized): Get catchFlow as parameter. Call
+	mergeTryCatch.
+	(mergeFinallyBlocks): New method, calls mergeTryCatch and does the
+	common part of mergeFinally and mergeSpecialFinally.
+	(analyzeFinally): Simplified, after checking and removing JSR, it
+	does immediately analyze and transform subroutine to get the
+	finallyBlock.  Then it throws away the catchFlow and calls
+	mergeFinallyBlocks.
+	(analyzeSpecialFinally): Simplified, after checking it only handles
+	the jumps in the try part and then call mergeFinallyBlocks.
+
 2001-08-10  Jochen Hoenicke  <jochen@gnu.org>
 
 	* configure.in: Changed bash syntax to more compatible (but
@@ -23,7 +55,7 @@
 
 	* jode/obfuscator/modules/SimpleAnalyzer.java.in:
 	Ported fix from ConstantAnalyzer:
- 	(canonizeReference): for interfaces call canonizeIfaceReference.
+	(canonizeReference): for interfaces call canonizeIfaceReference.
 	(canonizeIfaceReference): new method.
 	* jode/obfuscator/modules/ConstantAnalyzer.java.in:
 	made sub class of SimpleAnalyzer.
@@ -32,8 +64,7 @@
 
 2001-07-08  Jochen Hoenicke  <jochen@gnu.org>
 
-	* jode/bytecode/BytecodeInfo.java.in (calculateMaxStack): Handle
- 	special case for empty method.  Previous code would just crash.
+	* jode/bytecode/BytecodeInfo.java.in (calculateMaxStack): Handle	special case for empty method.  Previous code would just crash.
 
 2001-06-15  Jochen Hoenicke  <jochen@gnu.org>
 
@@ -166,8 +197,8 @@
 2001-05-08  Jochen Hoenicke  <jochen@gnu.org>
 
 	* jode/jvm/CodeVerifier.java.in (doVerify): Don't check for
- 	uninitialized objects in local or stack slots on backwards jump or
- 	exception blocks.  Sun's jdk also doesn't check it, and I never
+	uninitialized objects in local or stack slots on backwards jump or
+	exception blocks.  Sun's jdk also doesn't check it, and I never
 	understood why it is necessary.  But see JVM Spec 4.9.4.
 
 2001-05-02  Jochen Hoenicke  <jochen@gnu.org>
@@ -225,7 +256,7 @@
 2001-02-08  Jochen Hoenicke  <jochen@gnu.org>
 
 	* jode/expr/StoreInstruction.java (dumpExpression): Java doesn't
- 	allow parenthesis around left hand side, so use NO_PAREN and don't
+	allow parenthesis around left hand side, so use NO_PAREN and don't
 	call lhs.dumpExpression() with priority.
 	* jode/expr/PrePostFixOperator.java (dumpExpression): likewise.
 	* jode/expr/IIncOperator.java (dumpExpression): likewise.
@@ -243,7 +274,7 @@
 	ref.getClazz() gives a type signature.
 	* jode/flow/TransformExceptionHandlers.java.in:
 	(checkAndRemoveJSR): Only invoke removeBadJSR, if there are
- 	successors left.
+	successors left.
 	(checkAndRemoveMonitorExit): likewise.
 
 2001-02-04  Jochen Hoenicke  <jochen@gnu.org>
@@ -321,14 +352,14 @@
 	* jode/decompiler/Options.java (GNU_SPACING): new constant.
 	(GNU_STYLE): changed to include GNU_SPACING.
 	* jode/decompiler/ClassAnalyzer.java.in (dumpSource): Use
- 	open/closeBraceClass.
+	open/closeBraceClass.
 	* jode/decompiler/MethodAnalyzer.java.in (dumpSource): Use
- 	open/closeBraceNoIndent.  Insert a space for GNU_SPACING.
+	open/closeBraceNoIndent.  Insert a space for GNU_SPACING.
 	* jode/decompiler/InvokeOperator.java.in (dumpExpression): Insert
- 	a space for GNU_SPACING, use open/closeBraceClass for inner
- 	classes.
+	a space for GNU_SPACING, use open/closeBraceClass for inner
+	classes.
 	* jode/decompiler/UnaryOperator.java (dumpExpression): Insert
- 	a space for GNU_SPACING.
+	a space for GNU_SPACING.
 
 2001-01-30  Jochen Hoenicke  <jochen@gnu.org>
 
@@ -338,30 +369,30 @@
 	* jode/decompiler/Decompiler.java (setOption): detect pascal option.
 	* jode/decompiler/Main.java (main): dito.
 	* jode/decompiler/TabbedPrintWriter.java (openBrace,
- 	openBraceContinue, closeBrace, closeBraceNoSpace,
- 	closeBraceContinue): handle flush left.
+	openBraceContinue, closeBrace, closeBraceNoSpace,
+	closeBraceContinue): handle flush left.
 	
 2001-01-30  Jochen Hoenicke  <jochen@gnu.org>
 
 	* jode/type/NullType.java (intersection): Removed, since the
- 	version in ReferenceType is more correct.  Before
- 	tNull.isOfType(tRange(X,tNull)) returned false, which lead to
- 	incorrect behaviour in InvokeOperator.needsCast.
+	version in ReferenceType is more correct.  Before
+	tNull.isOfType(tRange(X,tNull)) returned false, which lead to
+	incorrect behaviour in InvokeOperator.needsCast.
 	* jode/decompiler/FieldAnalyzer.java.in (dumpSource): Removed the
- 	"= null" hack for final fields; it was not correct, since the
- 	field could be initialized in a constructor.
+	"= null" hack for final fields; it was not correct, since the
+	field could be initialized in a constructor.
 	* jode/decompiler/TabbedPrintWriter.java (BreakPoint.endOp):
 	Simplified the code, copy options always from child.
 	* jode/jvm/SyntheticAnalyzer.java.in (unifyParam): new field.
 	(checkConstructorAccess): Allow the special Parameter, whose
- 	purpose is to distinguish the wrapper from the real constructor
- 	and give him a "$" in the type signature, to appear at every
- 	position.  It doesn't appear at position 1 for inner classes.
+	purpose is to distinguish the wrapper from the real constructor
+	and give him a "$" in the type signature, to appear at every
+	position.  It doesn't appear at position 1 for inner classes.
 	Store the position in unifyParam.
 	* jode/expr/InvokeOperator.java (isGetClass): Allow the method to
- 	be declared inside an outer class:  We simply check if we can get
+	be declared inside an outer class:  We simply check if we can get
 	the method analyzer.
 	(simplify): handle unifyParam.
 	* jode/expr/PopOperator.java (getBreakPenalty): return penalty of
- 	inner expression. (dumpExpression): Call dumpExpression of
- 	subexpression immediately without priority.
+	inner expression. (dumpExpression): Call dumpExpression of
+	subexpression immediately without priority.
