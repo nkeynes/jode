@@ -9,26 +9,28 @@
 */ ?>
 <a name="decompiler">
 <h1>Using the Decompiler</h1></a>
-After you have <?php selflink("download") ?>downloaded</a> the necessary
-packages, put them into your <tt>CLASSPATH</tt>:
+<p>After you have <?php selflink("download") ?>downloaded</a> the jar archive
+put it into your <tt>CLASSPATH</tt>. The package
+<tt>swingall.jar</tt> is also needed if you are using JDK 1.1.</p>
 
 <ul><li>Under Windows you have to start a MSDOS session and type
 something like:
 <pre>
-set CLASSPATH=C:\download\jode-xxx.jar;C:\swing\swingall.jar
+set CLASSPATH=C:\download\jode-<?php echo "$version"?>.jar;C:\swing\swingall.jar
 </pre>
-</li><li>Under Unix you start a shell and type (for bourne shell):
-<pre>export CLASSPATH=/tmp/jode-xxx.jar:/usr/local/swing/swingall.jar</pre>
+
+<li>Under Unix you start a shell and type (for bourne shell):
+<pre>export CLASSPATH=/tmp/jode-<?php echo "$version"?>.jar:/usr/local/swing/swingall.jar</pre>
 or for csh:
-<pre>setenv CLASSPATH /tmp/jode-xxx.jar:/usr/local/swing/swingall.jar</pre>
+<pre>setenv CLASSPATH /tmp/jode-<?php echo "$version"?>.jar:/usr/local/swing/swingall.jar</pre>
 </ul>
 <br>
 There is also a batch file for windows and a script file for unix,
-that you can use.  Adapt the CLASSPATH in the file and put it to a
-convenient location.
+that you can use.  You can extract it with the following command:
 <pre>
-  jar -xvf jode-xxx.jar bin/jode.bat <i>resp.</i> bin/jode
+  jar -xvf jode-<?php echo "$version-jdk1.1"?>.jar bin/jode.bat <i>resp.</i> bin/jode
 </pre>
+Edit the file to adapt it to your paths and put it to a convenient location.
 
 <a name="cmdline"><h3>Command Line Interface</h3></a>
 
@@ -40,6 +42,13 @@ Start the class <tt>jode.decompiler.Main</tt> with the options.  The
 following command will give a complete list of the available commands:
 
 <pre>java jode.decompiler.Main --help</pre>
+
+If you want to decompile a jar package you can do it this way:
+
+<pre>java jode.decompiler.Main --dest srcdir program.jar</pre>
+
+If you have installed the batch file/script, you can use it like this:
+<pre>jode --dest srcdir program.jar</pre>
 
 <a name="awt"><h3>AWT Interface</h3></a>
 
@@ -60,43 +69,44 @@ appear.  You can save it via the <code>save</code> button.
 
 For the swing interface you need java version 1.2 or the separately
 available swing package (see <?php selflink("links#swing") ?>link
-page</a>.  You can invoke it like this:
+page</a>.  You can invoke it with the following command:
 <pre>
-java jode.swingui.Main --classpath classes.jar
+java jode.swingui.Main classes.jar
+<i>resp.</i> jode swi classes.jar
 </pre>
 
-The swing interface will show the package hierarchie of all classes
+<p>The swing interface will show the package hierarchie of all classes
 in the classpath on the left side.  You can now select a class and the
 decompiled code will appear on the right side.  Via the menu, you may
 change the classpath or switch between package hierarchie tree and
-class inheritence tree.<br>
+class inheritence tree.</p>
 
-The swing interface is very useful to browse through class files if
+<p>The swing interface is very useful to browse through class files if
 you don't have the source code.  You can also use it to trace bugs in
 library code.  It is not meant to generate <tt>java</tt> files and so
-you won't find a save option there.<br>
+you won't find a save option there.</p>
 
 <a name="java"><h3>Java Interface</h3></a>
 
-If you want to integrate <i>JODE</i> into your own java program, you
-can use the <a
+<p>If you want to integrate <i>JODE</i> into your own java program,
+you can use the <a
 href="Decompiler.java"><code>jode.decompiler.Decompiler</code></a>
 class.  Note that the GPL only allows you to integrate <i>JODE</i>
-into GPL programs.  Please contact me if you use <i>JODE</i> in this
-way.<br>
+into GPL programs.  Please tell me if you use <i>JODE</i> in this
+way.</p>
 
-You may use this <a
+<p>You may use this <a
 href="ftp://jode.sourceforge.net/pub/jode/jode-embedded.jar">stripped
-down jar archive</a> containing all necessary classes.
+down jar archive</a> containing all necessary classes.</p>
 
 <a name="optimizer"><h1>Using the Obfuscator</h1>
 
-To use the obfuscator you should first create a script file, say <a
+<p>To use the obfuscator you should first create a script file, say <a
 href="myproject.jos"><tt>myproject.jos</tt></a>.  Then you can invoke the
 obfuscator with:
 <pre>
 java jode.obfuscator.Main myproject.jos
-</pre>
+</pre></p>
 
 <p>The script file should contain the following options: </p>
 

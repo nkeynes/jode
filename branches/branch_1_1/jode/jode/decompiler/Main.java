@@ -19,7 +19,6 @@
 
 package jode.decompiler;
 import jode.bytecode.ClassInfo;
-import jode.bytecode.SearchPath;
 import jode.GlobalOptions;
 
 import java.io.BufferedOutputStream;
@@ -103,7 +102,7 @@ public class Main extends Options {
 	err.println("  -D, --debug=...      "+
 		    "use --debug=help for more information.");
 
-	err.println("The following options can be turned on or off with `yes' or `no' argument.");
+	err.println("NOTE: The following options can be turned on or off with `yes' or `no'.");
 	err.println("The options tagged with (default) are normally on.  Omitting the yes/no");
 	err.println("argument will toggle the option, e.g. --verify is equivalent to --verify=no.");
 	err.println("      --inner          "+
@@ -200,13 +199,35 @@ public class Main extends Options {
     }
 
     public static void main(String[] params) {
+	try {
+	    decompile(params);
+	} catch (ExceptionInInitializerError ex) {
+	    ex.getException().printStackTrace();
+	} catch (Throwable ex) {
+	    ex.printStackTrace();
+	}
+	/* When AWT applications are compiled with insufficient
+	 * classpath the type guessing by reflection code can
+	 * generate an awt thread that will prevent normal
+	 * exiting.
+	 */
+	System.exit(0);
+    }
+
+    public static void decompile(String[] params) {
 	if (params.length == 0) {
 	    usage();
 	    return;
 	}
 
         String classPath = System.getProperty("java.class.path")
-	    .replace(File.pathSeparatorChar, SearchPath.altPathSeparatorChar);
+	    .replace(File.pathSeparatorChar, Decompiler.altPathSeparatorChar);
+	String bootClassPath = System.getProperty("sun.boot.class.path");
+	if (bootClassPath != null)
+	    classPath += Decompiler.altPathSeparatorChar
+		+ bootClassPath.replace(File.pathSeparatorChar, 
+					Decompiler.altPathSeparatorChar);
+	
 	String destDir = null;
 
 	int importPackageLimit = ImportHandler.DEFAULT_PACKAGE_LIMIT;
@@ -337,7 +358,7 @@ public class Main extends Options {
 		     * Lets do him a pleasure and allow this.
 		     */
 		    ClassInfo.setClassPath(params[i]
-					   + SearchPath.altPathSeparatorChar
+					   + Decompiler.altPathSeparatorChar
 					   + classPath);
 		    Enumeration enum = new ZipFile(params[i]).entries();
 		    while (enum.hasMoreElements()) {

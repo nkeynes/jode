@@ -344,16 +344,42 @@ public class Main
 	    }
 	}
     }
+    
+    public static void usage() {
+	System.err.println("Usage: java jode.swingui.Main [CLASSPATH]");
+	System.err.println("The directories in CLASSPATH should be separated by ','.");
+	System.err.println("If no CLASSPATH is given the virtual machine classpath is used.");
+    }
 
     public static void main(String[] params) {
 	String cp = System.getProperty("java.class.path", "");
 	cp = cp.replace(File.pathSeparatorChar, 
 			Decompiler.altPathSeparatorChar);
-	for (int i=0; i<params.length; i++) {
-	    if (params[i].equals("--classpath"))
+	String bootClassPath = System.getProperty("sun.boot.class.path");
+	if (bootClassPath != null)
+	    cp += Decompiler.altPathSeparatorChar
+		+ bootClassPath.replace(File.pathSeparatorChar, 
+					Decompiler.altPathSeparatorChar);
+	int i = 0;
+	if (i < params.length) {
+	    if (params[i].equals("--classpath")
+		|| params[i].equals("--cp")
+		|| params[i].equals("-c"))
 		cp = params[++i];
-	    else
+	    else if (params[i].startsWith("-")) {
+		if (!params[i].equals("--help")
+		    && !params[i].equals("-h"))
+		System.err.println("Unknown option: "+params[i]);
+		usage();
 		return;
+	    } else
+		cp = params[i];
+	    i++;
+	}
+	if (i < params.length) {
+	    System.err.println("Too many arguments.");
+	    usage();
+	    return;
 	}
 	Main win = new Main(cp);
 	win.show();

@@ -8,6 +8,9 @@ Decompiler:
 Obfuscator:
  - flow obfuscation/optimization.
  - warn about Class.forName and list occurences.
+ - detect Class.forName on constant strings and handle appropriately.
+ - work around Class.forName, by creating a new version using a hash
+   table that maps md5 sums of old names to obfuscated names.
 
 DeObfuscator:
  - generate nice names:
@@ -27,5 +30,6 @@ User Interface:
 
 Internal:
  - clean up package hierarchy, esp. expr, flow and decompiler.
+ - move to net.sf.jode package.
  - make the class names more precise, e.g. StructuredBlock is Statement,
    FlowBlock is BasicBlock.

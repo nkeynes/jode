@@ -54,8 +54,7 @@ public class MethodInfo extends BinaryInfo {
 	if ((howMuch & KNOWNATTRIBS) != 0 && name.equals("Code")) {
 	    bytecode = new BytecodeInfo(this);
 	    bytecode.read(cp, input);
-	} else if ((howMuch & KNOWNATTRIBS) != 0 
-		   && name.equals("Exceptions")) {
+	} else if (name.equals("Exceptions")) {
 	    int count = input.readUnsignedShort();
 	    exceptions = new String[count];
 	    for (int i=0; i< count; i++)
