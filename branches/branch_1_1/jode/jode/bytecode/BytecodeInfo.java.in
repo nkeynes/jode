@@ -957,7 +957,9 @@ public class BytecodeInfo extends BinaryInfo implements Opcodes {
 	/* Recalculate addr, length, maxStack, maxLocals and add all
 	 * constants to gcp */
 	int addr = 0;
-	maxLocals = 0;
+	maxLocals = (methodInfo.isStatic() ? 0 : 1) + 
+	    TypeSignature.getArgumentSize(methodInfo.getType());
+	
 	for (Iterator iter = instructions.iterator(); iter.hasNext(); ) {
 	    Instruction instr = (Instruction) iter.next();
 	    int opcode = instr.getOpcode();
