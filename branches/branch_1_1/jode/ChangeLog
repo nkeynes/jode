@@ -1,3 +1,8 @@
+2001-07-08  Jochen Hoenicke  <jochen@gnu.org>
+
+	* jode/bytecode/BytecodeInfo.java.in (calculateMaxStack): Handle
+	special case for empty method.  Previous code would just crash.
+
 2001-06-15  Jochen Hoenicke  <jochen@gnu.org>
 
 	* jode/jvm/SyntheticAnalyzer.java.in:
