@@ -1,3 +1,9 @@
+2001-11-29  Jochen Hoenicke  <jochen@gnu.org>
+
+	* jode/obfuscator/modules/MultiIdentifierMatcher.java.in
+	(getNextComponent): Fixed a (noncritical) bug, submitted
+	by Sergio (koker at users.sf.net).
+
 2001-08-12  Jochen Hoenicke  <jochen@gnu.org>
 
 	* configure.in: Set version number to 1.1.1.
