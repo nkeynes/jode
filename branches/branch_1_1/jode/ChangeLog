@@ -1,5 +1,7 @@
 2002-06-11  Jochen Hoenicke  <jochen@gnu.org>
 
+	* configure.in: Set version number to 1.1.2.
+
 	* jode/bytecode/BytecodeInfo.java.in (readAttribute):  Fix the
 	exception handlers that javac 1.4 produces:  I simply shorten
 	the start/end interval, so that the catcher is not in the end
