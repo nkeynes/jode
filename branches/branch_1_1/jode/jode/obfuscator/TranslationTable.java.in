@@ -24,7 +24,7 @@ import @COLLECTIONS@.TreeMap;
 import @COLLECTIONS@.Iterator;
 
 ///#ifndef JDK12
-import @COLLECTIONS@.Comparator;
+///import @COLLECTIONS@.Comparator;
 ///#endif
 
 import java.io.InputStream;
@@ -37,17 +37,17 @@ import java.io.IOException;
 public class TranslationTable extends TreeMap {
 
 ///#ifndef JDK12
-    public TranslationTable() {
-	super(createStringComparator());
-    }
-
-    private static Comparator createStringComparator() {
-	return new Comparator() {
-	    public int compare(Object o1, Object o2) {
-		return ((String) o1).compareTo((String) o2);
-	    }
-	};
-    }
+///    public TranslationTable() {
+///	super(createStringComparator());
+///    }
+///
+///    private static Comparator createStringComparator() {
+///	return new Comparator() {
+///	    public int compare(Object o1, Object o2) {
+///		return ((String) o1).compareTo((String) o2);
+///	    }
+///	};
+///    }
 ///#endif
 
     public void load(InputStream in) throws IOException {

@@ -1,3 +1,40 @@
+2001-02-04  Jochen Hoenicke  <jochen@gnu.org>
+
+	* jode/expr/IfThenElseOperator.java (simplify): Allow in the class$
+	simplification the then and else part to be swapped.
+	* jode/bytecode/ClassInfo.java.in (read): Accept class version
+	1.3.
+	* jode/type/ClassInterfacesType.java (keywords): Added the package
+	and import keywords.
+	* jode/flow/TransformExceptionHandlers.java.in:
+	(getPredecessor): New function.
+	(getMonitorExitSlot): New function.
+	(skipFinExitChain): New function.
+	(removeJSR): Replaced by ...
+	(removeBadJSR): ... this.
+	(checkAndRemoveJSR): Use the new functions. Much simpler and
+	handles nested synchronized blocks.  It now traces the whole JSR
+	and monitorexit chain before a jump to the first entry via
+	skipFinExitChain, then checks and remove the first JSR
+	resp. monitorexit.  JSR jumps are simply ignored now.
+	(checkAndRemoveMonitorExit): likewise.
+	* jode/flow/StructuredBlock.java.in (prependBlock): New function.
+	* jode/flow/CatchBlock.java.in (makeDeclaration): Generate name
+	of dummyLocal, since nobody else will generate it.
+	
+2001-02-03  Jochen Hoenicke  <jochen@gnu.org>
+
+	* jode/bytecode/BytecodeInfo.java.in (read): Remove bogus
+	exceptionHandlers, whose catchers just throw the exception again.
+	This kind of entries are inserted by an obfuscator and would break
+	JODE.
+	* jode/util/UnifyHash.java.in (iterateHashCode): Call cleanUp,
+	to clean unneeded references.
+	* jode/flow/TransformConstructors.java (transformOneField):
+	Changed to private. Take field number as parameter.  Check that
+	expression doesn't contain a FieldOperator for a later field of
+	the same class or a PutFieldOperator.  Changed all callers.
+
 2001-02-01  Jochen Hoenicke  <jochen@gnu.org>
 
 	* jode/jvm/CodeVerifier.java.in (Type.mergeType): If array elem

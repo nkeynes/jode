@@ -379,26 +379,26 @@ public class SearchPath  {
 		while ((ze = zis.getNextEntry()) != null) {
 		    if (ze.getName().equals(fullname)) {
 ///#ifdef JDK11
-			// The skip method in jdk1.1.7 ZipInputStream
-			// is buggy.  We return a wrapper that fixes
-			// this.
-			return new FilterInputStream(zis) {
-			    private byte[] tmpbuf = new byte[512];
-			    public long skip(long n) throws IOException {
-				long skipped = 0;
-				while (n > 0) {
-				    int count = read(tmpbuf, 0, 
-						     (int)Math.min(n, 512L));
-				    if (count == -1)
-					return skipped;
-				    skipped += count;
-				    n -= count;
-				}
-				return skipped;
-			    }
-			};
+///			// The skip method in jdk1.1.7 ZipInputStream
+///			// is buggy.  We return a wrapper that fixes
+///			// this.
+///			return new FilterInputStream(zis) {
+///			    private byte[] tmpbuf = new byte[512];
+///			    public long skip(long n) throws IOException {
+///				long skipped = 0;
+///				while (n > 0) {
+///				    int count = read(tmpbuf, 0, 
+///						     (int)Math.min(n, 512L));
+///				    if (count == -1)
+///					return skipped;
+///				    skipped += count;
+///				    n -= count;
+///				}
+///				return skipped;
+///			    }
+///			};
 ///#else
-///			return zis;
+			return zis;
 ///#endif
 		    }
 		    zis.closeEntry();

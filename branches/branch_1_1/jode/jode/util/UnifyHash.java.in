@@ -1,4 +1,4 @@
-/* UnifyHash Copyright (C) 1999 Jochen Hoenicke.
+/* UnifyHash Copyright (C) 1999-2001 Jochen Hoenicke.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,8 +19,8 @@
 
 package jode.util;
 ///#ifdef JDK12
-///import java.lang.ref.WeakReference;
-///import java.lang.ref.ReferenceQueue;
+import java.lang.ref.WeakReference;
+import java.lang.ref.ReferenceQueue;
 ///#endif
 
 import @COLLECTIONS@.Comparator;
@@ -40,28 +40,28 @@ public class UnifyHash extends AbstractCollection {
     private static final float DEFAULT_LOAD_FACTOR = 0.75F;
 
 ///#ifdef JDK12
-///    private ReferenceQueue queue = new ReferenceQueue();
+    private ReferenceQueue queue = new ReferenceQueue();
 ///#endif
 
     static class Bucket
 ///#ifdef JDK12
-///	extends WeakReference
+	extends WeakReference
 ///#endif
     {
 ///#ifdef JDK12
-///	public Bucket(Object o, ReferenceQueue q) {
-///	    super(o, q);
-///	}
+	public Bucket(Object o, ReferenceQueue q) {
+	    super(o, q);
+	}
 ///#else
-	public Bucket(Object o) {
-	    this.obj = o;
-	}
-
-	Object obj;
-
-	public Object get() {
-	    return obj;
-	}
+///	public Bucket(Object o) {
+///	    this.obj = o;
+///	}
+///
+///	Object obj;
+///
+///	public Object get() {
+///	    return obj;
+///	}
 ///#endif
 
 	int hash;
@@ -107,21 +107,21 @@ public class UnifyHash extends AbstractCollection {
     }
 
 ///#ifdef JDK12
-///    public final void cleanUp() {
-///	Bucket died;
-///	while ((died = (Bucket)queue.poll()) != null) {
-///	    int diedSlot = Math.abs(died.hash % buckets.length);
-///	    if (buckets[diedSlot] == died)
-///		buckets[diedSlot] = died.next;
-///	    else {
-///		Bucket b = buckets[diedSlot];
-///		while (b.next != died)
-///		    b = b.next;
-///		b.next = died.next;
-///	    }
-///	    size--;
-///	}
-///    }
+    public final void cleanUp() {
+	Bucket died;
+	while ((died = (Bucket)queue.poll()) != null) {
+	    int diedSlot = Math.abs(died.hash % buckets.length);
+	    if (buckets[diedSlot] == died)
+		buckets[diedSlot] = died.next;
+	    else {
+		Bucket b = buckets[diedSlot];
+		while (b.next != died)
+		    b = b.next;
+		b.next = died.next;
+	    }
+	    size--;
+	}
+    }
 ///#endif
 
 
@@ -131,7 +131,7 @@ public class UnifyHash extends AbstractCollection {
 
     public Iterator iterator() {
 ///#ifdef JDK12
-///	cleanUp();
+	cleanUp();
 ///#endif
 
 	return new Iterator() {
@@ -182,6 +182,9 @@ public class UnifyHash extends AbstractCollection {
     }
 
     public Iterator iterateHashCode(final int hash) {
+///#ifdef JDK12
+	cleanUp();
+///#endif
 	return new Iterator() {
 	    private int known = modCount;
 	    private Bucket nextBucket
@@ -232,9 +235,9 @@ public class UnifyHash extends AbstractCollection {
 
 	int slot = Math.abs(hash % buckets.length);
 ///#ifdef JDK12
-///	Bucket b = new Bucket(o, queue);
+	Bucket b = new Bucket(o, queue);
 ///#else
-	Bucket b = new Bucket(o);
+///	Bucket b = new Bucket(o);
 ///#endif
 	b.hash = hash;
 	b.next = buckets[slot];
@@ -243,7 +246,7 @@ public class UnifyHash extends AbstractCollection {
 
     public Object unify(Object o, int hash, Comparator comparator) {
 ///#ifdef JDK12
-///	cleanUp();
+	cleanUp();
 ///#endif
 	int slot = Math.abs(hash % buckets.length);
 	for (Bucket b = buckets[slot]; b != null; b = b.next) {

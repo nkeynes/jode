@@ -509,6 +509,8 @@ public class ClassInterfacesType extends ReferenceType {
 
     private final static Hashtable keywords = new Hashtable();
     static {
+	keywords.put("package", Boolean.TRUE);
+	keywords.put("import", Boolean.TRUE);
 	keywords.put("if", Boolean.TRUE);
 	keywords.put("else", Boolean.TRUE);
 	keywords.put("for", Boolean.TRUE);

@@ -835,7 +835,8 @@ public final class InvokeOperator extends Operator
 	     * super class and anonymousNew will be set. 
 	     */
 	    InnerClassInfo outer = getOuterClassInfo(clazz);
-	    if (outer != null && outer.name == null)
+	    if (outer != null && outer.name == null
+		&& (Options.options & Options.OPTION_ANON) != 0)
 		anonymousNew = true;
 	    clazzAna = methodAnalyzer.getClassAnalyzer(clazz);
 	    if ((~Options.options & 
