@@ -1054,21 +1054,6 @@ public class CodeVerifier implements Opcodes {
 		}
 		if (instr.getSuccs() != null) {
 		    for (int i=0; i< instr.getSuccs().length; i++) {
-			if (instr.getSuccs()[i].getAddr() < instr.getAddr()) {
-			    /* This is a backwards branch */
-			    for (int j = 0; j < prevInfo.locals.length; j++) {
-				if (prevInfo.locals[j]
-				    .getTypeSig().charAt(0) == 'N')
-				    throw new VerifyException
-					("Uninitialized local in back-branch");
-			    }
-			    for (int j = 0; j < prevInfo.stackHeight; j++) {
-				if (prevInfo.stack[j]
-				    .getTypeSig().charAt(0) == 'N')
-				    throw new VerifyException
-					("Uninitialized stack in back-branch");
-			    }
-			}
 			if (mergeInfo(instr.getSuccs()[i],
 				      (VerifyInfo) info.clone()))
 			    todoSet.add(instr.getSuccs()[i]);
@@ -1077,12 +1062,6 @@ public class CodeVerifier implements Opcodes {
 		for (int i=0; i<handlers.length; i++) {
 		    if (handlers[i].start.compareTo(instr) <= 0
 			&& handlers[i].end.compareTo(instr) >= 0) {
-			for (int j = 0; j < prevInfo.locals.length; j++) {
-			    if (prevInfo.locals[j]
-				.getTypeSig().charAt(0) == 'N')
-				throw new VerifyException
-				    ("Uninitialized local in try block");
-			}
 			VerifyInfo excInfo = (VerifyInfo) prevInfo.clone();
 			excInfo.stackHeight = 1;
 			if (handlers[i].type != null)

@@ -1,3 +1,10 @@
+2001-05-08  Jochen Hoenicke  <jochen@gnu.org>
+
+	* jode/jvm/CodeVerifier.java.in (doVerify): Don't check for
+ 	uninitialized objects in local or stack slots on backwards jump or
+ 	exception blocks.  Sun's jdk also doesn't check it, and I never
+	understood why it is necessary.  But see JVM Spec 4.9.4.
+
 2001-05-02  Jochen Hoenicke  <jochen@gnu.org>
 
 	* jode/obfuscator/modules/ConstantAnalyzer.java.in (handleOpcode):
