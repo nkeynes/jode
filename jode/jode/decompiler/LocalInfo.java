@@ -395,7 +395,7 @@ public class LocalInfo implements Declarable {
     }
 
     public String toString() {
-        return getName();
+        return getName().toString();
     }
 
     public void dumpDeclaration(TabbedPrintWriter writer)

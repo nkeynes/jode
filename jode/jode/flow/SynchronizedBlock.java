@@ -23,12 +23,6 @@ import jode.decompiler.TabbedPrintWriter;
 import jode.expr.Expression;
 import jode.util.SimpleSet;
 
-///#ifdef JDK12
-///import java.util.Set;
-///#else
-import jode.util.Set;
-///#endif
-
 /**
  * This class represents a synchronized structured block.
  * 
@@ -77,8 +71,8 @@ public class SynchronizedBlock extends StructuredBlock {
         return true;
     }
 
-    public Set getDeclarables() {
-	Set used = new SimpleSet();
+    public SimpleSet getDeclarables() {
+	SimpleSet used = new SimpleSet();
 	if (object != null)
 	    object.fillDeclarables(used);
 	else
