@@ -47,12 +47,18 @@ public class ArrayType extends ReferenceType {
     }
 
     public Type getSuperType() {
-	return tRange(tObject, 
-		      (ReferenceType) tArray(elementType.getSuperType()));
+	if (elementType instanceof IntegerType)
+	    return tRange(tObject, this);
+	else
+	    return tRange(tObject, 
+			  (ReferenceType) tArray(elementType.getSuperType()));
     }
 
     public Type getSubType() {
-        return tArray(elementType.getSubType());
+	if (elementType instanceof IntegerType)
+	    return this;
+	else
+	    return tArray(elementType.getSubType());
     }
 
     public Type getHint() {
@@ -69,11 +75,11 @@ public class ArrayType extends ReferenceType {
      * @return the range type, or tError if not possible.
      */
     public Type createRangeType(ReferenceType bottom) {
-        /*
-         *  tArray(y), tArray(x) -> tArray( y.intersection(x) )
-         *  obj      , tArray(x) -> <obj, tArray(x)>
+	/*
+	 *  tArray(y), tArray(x) -> tArray( y.intersection(x) )
+	 *  obj      , tArray(x) -> <obj, tArray(x)>
 	 *    iff tArray extends and implements obj
-         */
+	 */
 	if (bottom.getTypeCode() == TC_ARRAY)
 	    return tArray(elementType.intersection
 			  (((ArrayType)bottom).elementType));
@@ -93,11 +99,11 @@ public class ArrayType extends ReferenceType {
      * @return the common sub type.
      */
     public Type getSpecializedType(Type type) {
-        /*  
-         *  tArray(x), object    -> tArray(x) iff tArray implements object
+	/*  
+	 *  tArray(x), iface     -> tArray(x) iff tArray implements iface
 	 *  tArray(x), tArray(y) -> tArray(x.intersection(y))
-         *  tArray(x), other     -> tError
-         */
+	 *  tArray(x), other     -> tError
+	 */
 	if (type.getTypeCode() == TC_RANGE) {
 	    type = ((RangeType) type).getBottom();
 	}
@@ -123,10 +129,10 @@ public class ArrayType extends ReferenceType {
      * @return the common super type.
      */
     public Type getGeneralizedType(Type type) {
-        /*  tArray(x), tNull     -> tArray(x)
-         *  tArray(x), tClass(y) -> common ifaces of tArray and tClass
-         *  tArray(x), tArray(y) -> tArray(x.intersection(y)) or tObject
-         *  tArray(x), other     -> tError
+	/*  tArray(x), tNull     -> tArray(x)
+	 *  tArray(x), tClass(y) -> common ifaces of tArray and tClass
+	 *  tArray(x), tArray(y) -> tArray(x.intersection(y)) or tObject
+	 *  tArray(x), other     -> tError
          */
 	if (type.getTypeCode() == TC_RANGE) {
 	    type = ((RangeType) type).getTop();
@@ -136,7 +142,9 @@ public class ArrayType extends ReferenceType {
         if (type.getTypeCode() == TC_ARRAY) {
 	    Type elType = elementType.intersection
 		(((ArrayType)type).elementType);
-	    return elType != tError ? tArray(elType) : tObject;
+	    if (elType != tError)
+		return tArray(elType);
+	    return ClassInterfacesType.create(null, arrayIfaces);
 	}
 	if (type.getTypeCode() == TC_CLASS) {
 	    ClassInterfacesType other = (ClassInterfacesType) type;

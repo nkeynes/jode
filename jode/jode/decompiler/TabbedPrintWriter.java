@@ -101,11 +101,8 @@ public class TabbedPrintWriter {
 	}
 
 	public void startOp(int opts, int penalty, int pos) {
-	    if (startPos != -1) {
-		System.err.println("WARNING: missing breakOp");
-		Thread.dumpStack();
-		return;
-	    }
+	    if (startPos != -1)
+		throw new InternalError("missing breakOp");
 	    startPos = pos;
 	    options = opts;
 	    breakPenalty = penalty;
@@ -539,8 +536,9 @@ public class TabbedPrintWriter {
 	Stack state = new Stack();
 	int pos = currentLine.length();
 	while (currentBP.parentBP != null) {
-	    state.push(new Integer(currentBP.options));
 	    state.push(new Integer(currentBP.breakPenalty));
+	    /* We don't want parentheses or unconventional line breaking */
+	    currentBP.options = DONT_BREAK;
 	    currentBP.endPos = pos;
 	    currentBP = currentBP.parentBP;
 	}
@@ -551,8 +549,7 @@ public class TabbedPrintWriter {
 	Stack state = (Stack) s;
 	while (!state.isEmpty()) {
 	    int penalty = ((Integer) state.pop()).intValue();
-	    int options = ((Integer) state.pop()).intValue();
-	    startOp(options, penalty);
+	    startOp(DONT_BREAK, penalty);
 	}
     }
 

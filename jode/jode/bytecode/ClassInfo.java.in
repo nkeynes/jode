@@ -617,9 +617,6 @@ public class ClassInfo extends BinaryInfo {
 	    String message = ex.getMessage();
             if ((howMuch & ~(FIELDS|METHODS|HIERARCHY
 			     |INNERCLASSES|OUTERCLASSES)) != 0) {
-		GlobalOptions.err.println
-		    ("Can't read class " + name + ".");
-		ex.printStackTrace(GlobalOptions.err);
 		throw new NoClassDefFoundError(name);
 	    }
 	    // Try getting the info through the reflection interface

@@ -33,14 +33,22 @@ public class JsrBlock extends StructuredBlock {
      * The inner block that jumps to the subroutine.
      */
     StructuredBlock innerBlock;
+    boolean good = false;
 
     public JsrBlock(Jump subroutine, Jump next) {
 	innerBlock = new EmptyBlock(subroutine);
 	innerBlock.outer = this;
 	setJump(next);
     }
-
     
+    public void setGood(boolean g) {
+	good = g;
+    }
+
+    public boolean isGood() {
+	return good;
+    }
+
     /* The implementation of getNext[Flow]Block is the standard
      * implementation */
 

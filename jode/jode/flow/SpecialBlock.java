@@ -148,6 +148,9 @@ public class SpecialBlock extends StructuredBlock {
          * to:
          *   method_invocation()
 	 *
+	 * With java1.3 due to access$ methods the method_invocation can
+	 * already be a non void store instruction.
+	 *
 	 *   PUSH arg1
 	 *   PUSH arg2
 	 *   POP2
@@ -174,7 +177,8 @@ public class SpecialBlock extends StructuredBlock {
 
 	    if (instr.getType().stackSize() == count) {
 		StructuredBlock newBlock;
-		if (instr instanceof InvokeOperator) {
+		if (instr instanceof InvokeOperator
+		    || instr instanceof StoreInstruction) {
 		    Expression newExpr
 			= new PopOperator(instr.getType()).addOperand(instr);
 		    prev.setInstruction(newExpr);

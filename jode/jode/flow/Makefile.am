@@ -41,6 +41,7 @@ MY_JAVA_FILES = \
   RetBlock.java \
   ReturnBlock.java \
   SequentialBlock.java \
+  SlotSet.java \
   SpecialBlock.java \
   StructuredBlock.java \
   SwitchBlock.java \
