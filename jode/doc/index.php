@@ -28,7 +28,7 @@ fields</li>
 <h2>News</h2>
 
 <ul>
-<li>JODE 1.1 is out. With support for javac v8 (jdk 1.3). </li>
+<li><i>JODE</i> 1.1 is out. With support for javac v8 (jdk 1.3). </li>
 <li><i>JODE</i> is now hosted by <a href="http://sourceforge.net/">SourceForge</a>.</li>
 <li>Now long lines are automatically broken.</li>
 <li><b>Inner and anonymous</b> classes are automatically decompiled.</li>

@@ -15,7 +15,7 @@ area:</P>
 the swing interface, you have to download swing separately, all other
 packages are already included in the archive. </li>
 
-<li> jode-1.1.jar is for JDK&nbsp;1.2 or better.  It should run
+<li>jode-1.1.jar is for JDK&nbsp;1.2 or better.  It should run
 without any other package.</li> </ul> </p>
 
 <h1>CVS Repository</h1>
