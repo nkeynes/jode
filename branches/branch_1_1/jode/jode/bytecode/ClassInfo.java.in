@@ -82,6 +82,7 @@ public class ClassInfo extends BinaryInfo {
     private boolean modified = false;
 
     private int modifiers = -1;
+    private boolean deprecatedFlag;
     private String name;
     private ClassInfo    superclass;
     private ClassInfo[]  interfaces;
@@ -272,6 +273,11 @@ public class ClassInfo extends BinaryInfo {
 			extraClasses[--extraCount] = ici;
 		}
 	    }
+	} else if (name.equals("Deprecated")) {
+	    deprecatedFlag = true;
+	    if (length != 0)
+		throw new ClassFormatException
+		    ("Deprecated attribute has wrong length");
 	} else
 	    super.readAttribute(name, length, cp, input, howMuch);
     }
@@ -406,6 +412,8 @@ public class ClassInfo extends BinaryInfo {
 		    gcp.putUTF8(extraClasses[i].name);
 	    }
 	}
+	if (deprecatedFlag)
+	    gcp.putUTF8("Deprecated");
         prepareAttributes(gcp);
     }
 
@@ -460,6 +468,10 @@ public class ClassInfo extends BinaryInfo {
 				  gcp.putUTF8(extraClasses[i].name) : 0);
 		output.writeShort(extraClasses[i].modifiers);
 	    }
+	}
+	if (deprecatedFlag) {
+	    output.writeShort(gcp.putUTF8("Deprecated"));
+	    output.writeInt(0);
 	}
     }
 
@@ -749,6 +761,10 @@ public class ClassInfo extends BinaryInfo {
         return Modifier.isInterface(getModifiers());
     }
 
+    public boolean isDeprecated() {
+	return deprecatedFlag;
+    }
+
     public FieldInfo findField(String name, String typeSig) {
         if ((status & FIELDS) == 0)
             loadInfo(FIELDS);
@@ -821,6 +837,10 @@ public class ClassInfo extends BinaryInfo {
     public void setModifiers(int newModifiers) {
         modifiers = newModifiers;
 	modified = true;
+    }
+
+    public void setDeprecated(boolean flag) {
+	deprecatedFlag = flag;
     }
 
     public void setMethods(MethodInfo[] mi) {
