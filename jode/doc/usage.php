@@ -97,7 +97,7 @@ into GPL programs.  Please tell me if you use <i>JODE</i> in this
 way.</p>
 
 <p>You should ship <code>jode-1.1-embedded.jar</code> with your program.  This jar file is
-available in the <? sflink("project/filelist.php") ?>download area</a>.
+available in the <? sflink("project/showfiles.php") ?>download area</a>.
 It works only under JDK&nbsp;1.2 and above.</p>
 
 <a name="optimizer"><h1>Using the Obfuscator</h1>

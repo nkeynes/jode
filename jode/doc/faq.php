@@ -31,6 +31,12 @@ loading classes can have side effects, e.g. when AWT classes are
 loaded, an AWT thread is created, even though Jode doesn't need
 it.</p>
 
+<h3>Why doesn't Jode decompile my inner class
+<code>MyClass$Inner.class</code>?</h3>
+
+<p>You should decompile the outermost class (<code>MyClass</code> in
+this case).  The produced code contains the inner class.  </p>
+
 <h2>Obfuscator issues</h2>
 
 <h3>What should be included in the classpath?</h3>
