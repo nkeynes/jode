@@ -75,7 +75,10 @@ public class Main extends Options {
     public static void usage() {
 	PrintWriter err = GlobalOptions.err;
 	err.println("Version: " + GlobalOptions.version);
-        err.println("Usage: java jode.decompiler.Main [OPTIONS]... [CLASSES]...");
+        err.println("Usage: java jode.decompiler.Main [OPTION]* {CLASS|JAR}*");
+	err.println("Give a fully qualified CLASS name, e.g. jode.decompiler.Main, if you want to");
+	err.println("decompile a single class, or a JAR file containing many classes.");
+	err.println("OPTION is any of these:");
 	err.println("  -h, --help           "+
 		    "show this information.");
 	err.println("  -V, --version        "+
@@ -96,9 +99,13 @@ public class Main extends Options {
 	err.println("                       "+
 		    "and packages with more then pkglimit used classes.");
 	err.println("                       "+
-		    "Limit 0 means, never import, default is 0,1.");
+		    "Limit 0 means never import. Default is 0,1.");
+	err.println("  -D, --debug=...      "+
+		    "use --debug=help for more information.");
 
 	err.println("The following options can be turned on or off with `yes' or `no' argument.");
+	err.println("The options tagged with (default) are normally on.  Omitting the yes/no");
+	err.println("argument will toggle the option, e.g. --verify is equivalent to --verify=no.");
 	err.println("      --inner          "+
 		    "decompile inner classes (default).");
 	err.println("      --anonymous      "+
@@ -108,7 +115,7 @@ public class Main extends Options {
 	err.println("      --lvt            "+
 		    "use the local variable table (default).");
 	err.println("      --pretty         "+
-		    "use `pretty' names for local variables.");
+		    "use `pretty' names for local variables (default).");
 	err.println("      --push           "+
 		    "allow PUSH instructions in output.");
 	err.println("      --decrypt        "+
@@ -118,10 +125,7 @@ public class Main extends Options {
 	err.println("      --immediate      "+
 		    "output source immediately (may produce buggy code).");
 	err.println("      --verify         "+
-		    "verify code before decompiling it.");
-	err.println("Debugging options, mainly used to debug this decompiler:");
-	err.println("  -D, --debug=...      "+
-		    "use --debug=help for more information.");
+		    "verify code before decompiling it (default).");
     }
 
     public static boolean handleOption(int option, int longind, String arg) {
@@ -133,8 +137,9 @@ public class Main extends Options {
 	    options &= ~(1 << option);
 	else {
 	    GlobalOptions.err.println
-		("jode.decompiler.Main: option --"+longOptions[longind].getName()
-		 +" takes one of `yes', `no', `on', `off' as parameter");
+		("jode.decompiler.Main: option --"
+		 + longOptions[longind].getName()
+		 + " takes one of `yes', `no', `on', `off' as parameter");
 	    return false;
 	}
 	return true;

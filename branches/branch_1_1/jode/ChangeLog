@@ -1,3 +1,7 @@
+2001-04-10  Jochen Hoenicke  <jochen@gnu.org>
+
+	* jode/decompiler/Main.java (usage):  Reworked usage message.
+
 2001-04-09  Jochen Hoenicke  <jochen@gnu.org>
 
 	* jode/bytecode/SearchPath.java: Bug fixes from Joe Bronkema:
