@@ -1,3 +1,13 @@
+2002-02-08  Jochen Hoenicke  <jochen@gnu.org>
+
+	* jode/obfuscator/ClassIdentifier.java.in (transformInnerClasses):
+	Bug fix: Added missing checks for STRIP_UNREACH.
+
+	* jode/obfuscator/MethodIdentifier.java.in (doTransformation):
+	Don't run analyzer on unreachable methods.  Previously the 
+	ConstantAnalyzer assumed that the instructions are not reachable
+	and removed them all leading to illegal bytecode.
+
 2002-02-01  Jochen Hoenicke  <jochen@gnu.org>
 
 	* jode/flow/CreateAssignExpression.java (createAssignOp):

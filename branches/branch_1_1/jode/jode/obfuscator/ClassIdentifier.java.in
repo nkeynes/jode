@@ -517,7 +517,8 @@ public class ClassIdentifier extends Identifier {
 			   .getClassIdentifier(outerClasses[i].outer))
 			: null;
 		    
-		    if (outerIdent != null && !outerIdent.isReachable())
+		    if ((Main.stripping & Main.STRIP_UNREACH) != 0
+			&& outerIdent != null && !outerIdent.isReachable())
 			continue;
 		    
 		    String inner = lastClass;
@@ -556,9 +557,8 @@ public class ClassIdentifier extends Identifier {
 		for (int i=0; i<innerClasses.length; i++) {
 		    ClassIdentifier innerIdent = Main.getClassBundle()
 			.getClassIdentifier(innerClasses[i].inner);
-		    if (innerIdent != null 
-			&& (Main.stripping & Main.STRIP_UNREACH) != 0
-			&& !innerIdent.isReachable())
+		    if ((Main.stripping & Main.STRIP_UNREACH) != 0
+			&& innerIdent != null && !innerIdent.isReachable())
 			continue;
 		    
 		    String inner = innerIdent == null
@@ -609,10 +609,12 @@ public class ClassIdentifier extends Identifier {
 		    ClassIdentifier innerIdent = Main.getClassBundle()
 			.getClassIdentifier(extraClasses[i].inner);
 		    
-		    if (innerIdent != null && !innerIdent.isReachable())
-			continue;
-		    if (outerIdent != null && !outerIdent.isReachable())
-			continue;
+		    if ((Main.stripping & Main.STRIP_UNREACH) != 0) {
+			if (innerIdent != null && !innerIdent.isReachable())
+			    continue;
+			if (outerIdent != null && !outerIdent.isReachable())
+			    continue;
+		    }
 
 		    String inner = innerIdent == null
 			? extraClasses[i].inner
