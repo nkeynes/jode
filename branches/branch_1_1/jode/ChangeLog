@@ -1,3 +1,10 @@
+2001-02-28  Jochen Hoenicke  <jochen@gnu.org>
+
+	* acinclude.m4 (JODE_CHECK_CLASS): Changed "test -e" to "-f" since
+	-e is not supported on all architectures (Solaris) and -f is more
+	correct anyway. 
+	Reported by Erik Modén <Erik.Moden@emw.ericsson.se>.
+
 2001-02-27  Jochen Hoenicke  <jochen@gnu.org>
 
 	* jode/swingui/Main.java.in (AreaWriter): Convert all kinds of
