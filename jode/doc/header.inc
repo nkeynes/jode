@@ -25,7 +25,7 @@ function sflink($link) {
 <html>
 <head>
 <title>Java Optimize and Decompile Environment (JODE)</title>
-<meta name="date" content="2001-05-27">
+<meta name="date" content="2001-05-29">
 <meta name="description" content="JODE - Java Optimize and Decompile Environment.">
 <meta name="author" content="Jochen Hoenicke">
 <meta name="keywords" content="jode, java, decompiler, obfuscator, deobfuscator, reverse engineering, free, GPL">
@@ -49,7 +49,7 @@ body { color:#000000; background-color: #FFFFFF; }
     ></td
     ><td align="right"
       >Powered by <a href="http://sourceforge.net"><img
-      src="http://sourceforge.net/sflogo.html?group_id=3790&type=1"
+      src="http://sourceforge.net/sflogo.php?group_id=3790&type=1"
       border=0 width=88 height=31 alt="SourceForge"></a><br
       >Best viewed with <a
       href="http://www.anybrowser.org/campaign/"><img
