@@ -1,3 +1,10 @@
+2002-02-01  Jochen Hoenicke  <jochen@gnu.org>
+
+	* jode/flow/CreateAssignExpression.java (createAssignOp):
+	Bug fix: Check whether store is already a op-assign and break out.
+	* jode/expr/StoreInstruction.java (isOpAssign): New function to
+	check whether this is an op-assign.
+
 2002-01-16  Jochen Hoenicke  <jochen@gnu.org>
 
 	Fixes by anonymous for SerializePreserver:
