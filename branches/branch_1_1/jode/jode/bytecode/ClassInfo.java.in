@@ -192,6 +192,19 @@ public class ClassInfo extends BinaryInfo {
 		int access = input.readUnsignedShort();
 		if (innername != null && innername.length() == 0)
 		    innername = null;
+
+		/* Some compilers give method scope classes a valid
+		 * outer field, but we mustn't handle them as inner
+		 * classes.  The best way to distinguish this case 
+		 * is by the class name.
+		 */
+		if (outer != null && innername != null
+		    && inner.length() > outer.length() + 2 + innername.length()
+		    && inner.startsWith(outer+"$") 
+		    && inner.endsWith("$"+innername)
+		    && Character.isDigit(inner.charAt(outer.length() + 1)))
+		    outer = null;
+
 		InnerClassInfo ici = new InnerClassInfo 
 		    (inner, outer, innername, access);
 
