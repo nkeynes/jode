@@ -1,3 +1,14 @@
+2002-11-24  Jochen Hoenicke  <jochen@gnu.org>
+
+	* jode/bytecode/ClassInfo.java.in (deprecatedFlag):  Added flag
+	for deprecated classes. Stuart Ballard noticed that this was
+	missing.
+	(readAttribute): Read deprecated attribute.
+	(prepareWriting): Prepare deprecated attribute.
+	(writeKnownAttributes): Write deprecated attribute.
+	(isDeprected): New function.
+	(setDeprecated): Likewise.
+
 2002-06-11  Jochen Hoenicke  <jochen@gnu.org>
 
 	* configure.in: Set version number to 1.1.2.
