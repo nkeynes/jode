@@ -920,11 +920,6 @@ public class BytecodeInfo extends BinaryInfo implements Opcodes {
 
     private void calculateMaxStack() {
 	maxStack = 0;
-
-	if (instructions.getCodeLength() == 0)
-	    /* This is an empty method; the code below would crash */
-	    return;
-
 	int[] stackHeights = new int[instructions.getCodeLength()];
 	int[] poppush = new int[2];
 	Stack todo = new Stack();
@@ -1200,7 +1195,12 @@ public class BytecodeInfo extends BinaryInfo implements Opcodes {
 	    addr += length;
 	}
 	instructions.setLastAddr(addr);
-	calculateMaxStack();
+	try {
+	    calculateMaxStack();
+	} catch (RuntimeException ex) {
+	    ex.printStackTrace();
+	    dumpCode(GlobalOptions.err);
+	}
 	for (int i=0; i< exceptionHandlers.length; i++)
 	    if (exceptionHandlers[i].type != null)
 		gcp.putClassName(exceptionHandlers[i].type);
