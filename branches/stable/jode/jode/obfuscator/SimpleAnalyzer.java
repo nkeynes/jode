@@ -1,0 +1,148 @@
+/* SimpleAnalyzer Copyright (C) 1999 Jochen Hoenicke.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2, or (at your option)
+ * any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; see the file COPYING.  If not, write to
+ * the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+ *
+ * $Id$
+ */
+
+package jode.obfuscator;
+import jode.bytecode.*;
+import jode.type.Type;
+
+public class SimpleAnalyzer implements CodeAnalyzer, Opcodes {
+    /**
+     * Reads the opcodes out of the code info and determine its 
+     * references
+     * @return an enumeration of the references.
+     */
+    public void analyzeCode(MethodIdentifier m, BytecodeInfo bytecode) {
+	for (Instruction instr = bytecode.getFirstInstr();
+	     instr != null; instr = instr.nextByAddr) {
+	    switch (instr.opcode) {
+	    case opc_checkcast:
+	    case opc_instanceof:
+	    case opc_multianewarray: {
+		String clName = (String) instr.objData;
+		int i = 0;
+		while (i < clName.length() && clName.charAt(i) == '[')
+		    i++;
+		if (i < clName.length() && clName.charAt(i) == 'L') {
+		    clName = clName.substring(i+1, clName.length()-1);
+		    Main.getClassBundle().reachableIdentifier(clName, false);
+		}
+		break;
+	    }
+	    case opc_invokespecial:
+	    case opc_invokestatic:
+	    case opc_invokeinterface:
+	    case opc_invokevirtual:
+	    case opc_putstatic:
+	    case opc_putfield:
+		m.setGlobalSideEffects();
+		/* fall through */
+	    case opc_getstatic:
+	    case opc_getfield: {
+		Reference ref = (Reference) instr.objData;
+		Identifier ident = Main.getClassBundle().getIdentifier(ref);
+		String clName = ref.getClazz();
+		String realClazzName;
+		if (ident != null) {
+		    ClassIdentifier clazz = (ClassIdentifier)ident.getParent();
+		    realClazzName = "L" + (clazz.getFullName()
+					   .replace('.', '/')) + ";";
+		    if (instr.opcode == opc_putstatic
+			|| instr.opcode == opc_putfield) {
+			FieldIdentifier fi = (FieldIdentifier) ident;
+			if (fi != null && !fi.isNotConstant())
+			    fi.setNotConstant();
+		    } else {
+			clazz.reachableIdentifier
+			    (ref.getName(), ref.getType(),
+			     instr.opcode == opc_invokevirtual 
+			     || instr.opcode == opc_invokeinterface);
+		    }
+		} else {
+		    /* We have to look at the ClassInfo's instead, to
+		     * point to the right method.
+		     */
+		    ClassInfo clazz;
+		    if (clName.charAt(0) == '[') {
+			/* Arrays don't define new methods (well clone(),
+			 * but that can be ignored).
+			 */
+			clazz = ClassInfo.javaLangObject;
+		    } else {
+			clazz = ClassInfo.forName
+			    (clName.substring(1, clName.length()-1)
+			     .replace('/','.'));
+		    }
+		    while (clazz != null
+			   && clazz.findMethod(ref.getName(), 
+					       ref.getType()) == null)
+			clazz = clazz.getSuperclass();
+
+		    realClazzName = (clazz != null) ? clName
+			: "L" + clazz.getName().replace('.', '/') + ";";
+		}
+		if (!realClazzName.equals(ref.getClazz())) {
+		    ref = Reference.getReference(realClazzName, 
+						 ref.getName(), ref.getType());
+		    instr.objData = ref;
+		}
+		break;
+	    }
+	    }
+	}
+
+	Handler[] handlers = bytecode.getExceptionHandlers();
+	for (int i=0; i< handlers.length; i++) {
+	    if (handlers[i].type != null)
+		Main.getClassBundle()
+		    .reachableIdentifier(handlers[i].type, false);
+	}
+    }
+
+    public void transformCode(BytecodeInfo bytecode) {
+	for (Instruction instr = bytecode.getFirstInstr(); 
+	     instr != null; instr = instr.nextByAddr) {
+	    if (instr.opcode == opc_putstatic
+		|| instr.opcode == opc_putfield) {
+		Reference ref = (Reference) instr.objData;
+		FieldIdentifier fi = (FieldIdentifier)
+		    Main.getClassBundle().getIdentifier(ref);
+		if (fi != null
+		    && (Main.stripping & Main.STRIP_UNREACH) != 0
+		    && !fi.isReachable()) {
+		    /* Replace instruction with pop opcodes. */
+		    int stacksize = 
+			(instr.opcode 
+			 == Instruction.opc_putstatic) ? 0 : 1;
+		    stacksize += Type.tType(ref.getType()).stackSize();
+		    if (stacksize == 3) {
+			/* Add a pop instruction after this opcode. */
+			Instruction second = instr.appendInstruction();
+			second.length = 1;
+			second.opcode = Instruction.opc_pop;
+			stacksize--;
+		    }
+		    instr.objData = null;
+		    instr.intData = 0;
+		    instr.opcode = Instruction.opc_pop - 1 + stacksize;
+		    instr.length = 1;
+		}
+	    }
+	}
+    }
+}
