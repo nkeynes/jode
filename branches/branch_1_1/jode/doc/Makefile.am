@@ -13,7 +13,7 @@ links.php \
 usage.php
 
 HTML_FILES = $(PHP_FILES:%.php=$(srcdir)/%.html)
-noinst_DATA = $(HTML_FILES)
+# noinst_DATA = $(HTML_FILES)
 
 EXTRA_DIST = $(PHP_FILES) $(notdir $(HTML_FILES)) \
 header.inc \
