@@ -1,3 +1,8 @@
+2001-05-02  Jochen Hoenicke  <jochen@gnu.org>
+
+	* jode/obfuscator/modules/ConstantAnalyzer.java.in (handleOpcode):
+	Added divide by zero checks for opc_irem and opc_lrem.
+
 2001-04-10  Jochen Hoenicke  <jochen@gnu.org>
 
 	* jode/decompiler/Main.java (usage):  Reworked usage message.
