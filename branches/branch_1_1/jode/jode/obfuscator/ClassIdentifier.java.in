@@ -30,7 +30,6 @@ import @COLLECTIONS@.Iterator;
 import @COLLECTIONS@.List;
 import @COLLECTIONS@.LinkedList;
 import @COLLECTIONS@.Map;
-import @COLLECTIONS@.Random;
 import @COLLECTIONEXTRA@.UnsupportedOperationException;
 
 import java.lang.reflect.Modifier;
@@ -374,9 +373,8 @@ public class ClassIdentifier extends Identifier {
 	FieldInfo[] finfos   = info.getFields();
 	MethodInfo[] minfos  = info.getMethods();
 	if (Main.swapOrder) {
-	    Random rand = new Random();
-	    Collections.shuffle(Arrays.asList(finfos), rand);
-	    Collections.shuffle(Arrays.asList(minfos), rand);
+	    Collections.shuffle(Arrays.asList(finfos), Main.rand);
+	    Collections.shuffle(Arrays.asList(minfos), Main.rand);
 	}
 	fieldIdents = new ArrayList(finfos.length);
 	methodIdents = new ArrayList(minfos.length);

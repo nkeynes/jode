@@ -52,8 +52,9 @@ public class ClassBundle implements OptionHandler {
     String classPath;
     String destDir;
 
-    String tableFile;
-    String toTableFile;
+    String inTableFile;
+    String outTableFile;
+    String outRevTableFile;
 
     IdentifierMatcher loading;
     IdentifierMatcher preserving;
@@ -103,21 +104,39 @@ public class ClassBundle implements OptionHandler {
 	    return;
 	}
 
-	if (option.equals("table")) {
+	if (option.equals("verbose")) {
 	    if (values.size() != 1)
 		throw new IllegalArgumentException
-		    ("Only one destination path allowed");
-	    tableFile = (String) values.iterator().next();
+		    ("Verbose takes one int parameter");
+	    GlobalOptions.verboseLevel
+		= ((Integer) values.iterator().next()).intValue();
 	    return;
 	}
 
-	if (option.equals("revtable")) {
+	if (option.equals("intable") || option.equals("table")) {
 	    if (values.size() != 1)
 		throw new IllegalArgumentException
 		    ("Only one destination path allowed");
-	    toTableFile = (String) values.iterator().next();
+	    inTableFile = (String) values.iterator().next();
 	    return;
 	}
+
+	if (option.equals("outtable")) {
+	    if (values.size() != 1)
+		throw new IllegalArgumentException
+		    ("Only one destination path allowed");
+	    outTableFile = (String) values.iterator().next();
+	    return;
+	}
+
+	if (option.equals("outrevtable") || option.equals("revtable")) {
+	    if (values.size() != 1)
+		throw new IllegalArgumentException
+		    ("Only one destination path allowed");
+	    outRevTableFile = (String) values.iterator().next();
+	    return;
+	}
+
 	if (option.equals("strip")) {
 	next_token:
 	    for (Iterator iter = values.iterator(); iter.hasNext(); ) {
@@ -359,25 +378,41 @@ public class ClassBundle implements OptionHandler {
     public void readTable() {
 	try {
 	    TranslationTable table = new TranslationTable();
-	    InputStream input = new FileInputStream(tableFile);
+	    InputStream input = new FileInputStream(inTableFile);
 	    table.load(input);
 	    input.close();
 	    basePackage.readTable(table);
 	} catch (java.io.IOException ex) {
-	    GlobalOptions.err.println("Can't read rename table " + tableFile);
+	    GlobalOptions.err.println("Can't read rename table "
+				      + inTableFile);
 	    ex.printStackTrace(GlobalOptions.err);
 	}
     }
 
     public void writeTable() {
 	TranslationTable table = new TranslationTable();
-	basePackage.writeTable(table);
+	basePackage.writeTable(table, false);
 	try {
-	    OutputStream out = new FileOutputStream(toTableFile);
+	    OutputStream out = new FileOutputStream(outTableFile);
 	    table.store(out);
 	    out.close();
 	} catch (java.io.IOException ex) {
-	    GlobalOptions.err.println("Can't write rename table "+toTableFile);
+	    GlobalOptions.err.println("Can't write rename table "
+				      + outTableFile);
+	    ex.printStackTrace(GlobalOptions.err);
+	}
+    }
+
+    public void writeRevTable() {
+	TranslationTable revtable = new TranslationTable();
+	basePackage.writeTable(revtable, true);
+	try {
+	    OutputStream out = new FileOutputStream(outRevTableFile);
+	    revtable.store(out);
+	    out.close();
+	} catch (java.io.IOException ex) {
+	    GlobalOptions.err.println("Can't write rename table "
+				      + outRevTableFile);
 	    ex.printStackTrace(GlobalOptions.err);
 	}
     }
@@ -477,11 +512,13 @@ public class ClassBundle implements OptionHandler {
 
 	GlobalOptions.err.println("Renaming methods");
 	time = System.currentTimeMillis();
-	if (tableFile != null)
+	if (inTableFile != null)
             readTable();
 	buildTable(renamer);
-        if (toTableFile != null)
+        if (outTableFile != null)
             writeTable();
+        if (outRevTableFile != null)
+            writeRevTable();
 	System.err.println("Time used: "+(System.currentTimeMillis() - time));
 
 	GlobalOptions.err.println("Transforming the classes");
