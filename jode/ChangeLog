@@ -1,3 +1,13 @@
+2001-02-05  Jochen Hoenicke  <jochen@gnu.org>
+
+	* jode/expr/InvokeOperator.java.in (Environment.invokeMethod): 
+	Fixed the call to ClassInfo.forName: it expects a class name, while
+	ref.getClazz() gives a type signature.
+	* jode/flow/TransformExceptionHandlers.java.in:
+	(checkAndRemoveJSR): Only invoke removeBadJSR, if there are
+ 	successors left.
+	(checkAndRemoveMonitorExit): likewise.
+
 2001-02-04  Jochen Hoenicke  <jochen@gnu.org>
 
 	* jode/expr/IfThenElseOperator.java (simplify): Allow in the class$
