@@ -657,17 +657,12 @@ public class LocalOptimizer implements Opcodes, CodeTransformer {
 	 */
 	distributeLocals(locals);
 
-	/* Update the instructions and calculate new maxlocals.
+	/* Update the instructions.
 	 */
-	maxlocals = paramLocals.length;
 	for (InstrInfo info = firstInfo; info != null; info = info.nextInfo) {
-	    if (info.local != null) {
-		if (info.local.newSlot+info.local.size > maxlocals)
-		    maxlocals = info.local.newSlot + info.local.size;
+	    if (info.local != null)
 		info.instr.setLocalSlot(info.local.newSlot);
-	    }
 	}
-	bc.setMaxLocals(maxlocals);
 
 	/* Update LocalVariableTable
 	 */
