@@ -401,15 +401,11 @@ public class ClassIdentifier extends Identifier {
 	ifaceNames = new String[ifaces.length];
 	for (int i=0; i < ifaces.length; i++) {
 	    ifaceNames[i] = ifaces[i].getName();
-	    ClassIdentifier ifaceident = Main.getClassBundle()
-		.getClassIdentifier(ifaceNames[i]);
 	    initSuperClasses(ifaces[i]);
 	}
 
 	if (info.getSuperclass() != null) {
 	    superName = info.getSuperclass().getName();
-	    ClassIdentifier superident = Main.getClassBundle()
-		.getClassIdentifier(superName);
 	    initSuperClasses(info.getSuperclass());
 	}
 
@@ -458,11 +454,10 @@ public class ClassIdentifier extends Identifier {
      * @param ancestor The ancestor whose interfaces should be added.
      */
     public void addIfaces(Collection result, ClassIdentifier ancestor) {
-	String[] ifaces = ancestor.ifaceNames;
 	ClassInfo[] ifaceInfos = ancestor.info.getInterfaces();
-	for (int i=0; i < ifaces.length; i++) {
+	for (int i=0; i < ifaceInfos.length; i++) {
 	    ClassIdentifier ifaceident
-		= Main.getClassBundle().getClassIdentifier(ifaces[i]);
+		= Main.getClassBundle().getClassIdentifier(ifaceInfos[i].getName());
 	    if (ifaceident != null && !ifaceident.isReachable())
 		addIfaces(result, ifaceident);
 	    else
