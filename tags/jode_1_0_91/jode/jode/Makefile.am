@@ -1,0 +1,43 @@
+## Input file for automake to generate the Makefile.in used by configure
+
+SUBDIRS = util bytecode type jvm expr flow decompiler obfuscator @SWINGUI@
+
+JAR = @JAR@
+JAVAC = @JAVAC@
+JAVADEP = $(top_builddir)/javaDependencies.pl -subdir=$(subdir)\
+   -dependdir=$(top_builddir) -classpath=$(top_builddir):$(top_srcdir)
+CLASSPATH = @CLASSPATH@
+CLASSLIB = @CLASSLIB@
+SUBSTCP = @SUBSTCP@
+BUILD_CLASSPATH = $(top_srcdir):$(top_builddir):$(CLASSPATH):$(CLASSLIB)
+
+MY_JAVA_FILES = \
+  AssertError.java \
+  Decompiler.java  \
+  GlobalOptions.java  \
+  JodeApplet.java  \
+  JodeWindow.java
+
+noinst_DATA = $(MY_JAVA_FILES:.java=.class)
+EXTRA_DIST = $(MY_JAVA_FILES)
+
+
+JARFILE = jode-@VERSION@.jar
+#data_DATA = $(JARFILE)
+
+@QUOTE@-include $(MY_JAVA_FILES:.java=.dep)
+
+%.class: %.java
+	$(JAVAC) -classpath `$(SUBSTCP) $(BUILD_CLASSPATH):$(CLASSLIB)` -d $(top_builddir) $<
+
+%.dep: %.class
+	$(JAVADEP) $< >$@
+
+clean-local:
+	@rm -f *.class
+	@rm -f *.dep
+
+$(JARFILE): $(noinst_DATA)
+	CLASSPATH=$(top_builddir):$(CLASSPATH) $(JAVA) -mx80m \
+	    jode.obfuscator.Main --classpath=$(top_builddir) \
+	                --dest=$(JARFILE) -v -v $(srcdir)/jode.jodescript
