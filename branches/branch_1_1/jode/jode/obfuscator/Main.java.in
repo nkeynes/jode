@@ -57,7 +57,7 @@ public class Main {
     public static final int STRIP_LVT        = 0x0004;
     public static final int STRIP_LNT        = 0x0008;
     public static final int STRIP_SOURCE     = 0x0010;
-    public static int stripping = 0x1;
+    public static int stripping = 0;
 
     private static ClassBundle bundle;
 

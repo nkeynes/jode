@@ -1,3 +1,9 @@
+2001-07-27  Jochen Hoenicke  <jochen@gnu.org>
+
+	* jode/obfuscator/Main.java.in (stripping): Initialize to 0 which
+	means strip nothing.  This is necessary because there is no way
+	to turn off stripping.
+
 2001-07-11  Jochen Hoenicke  <jochen@gnu.org>
 
 	* jode/flow/CatchBlock.java.in (combineLocal):  Added more checks
