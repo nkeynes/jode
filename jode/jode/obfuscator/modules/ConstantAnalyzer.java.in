@@ -1522,10 +1522,6 @@ public class ConstantAnalyzer implements Opcodes, CodeAnalyzer {
         case opc_ineg: case opc_fneg: 
 	    iter.set(new Instruction(opc_pop));
 	    break;
-	case opc_if_icmpeq: case opc_if_icmpne:
-	case opc_if_icmplt: case opc_if_icmpge: 
-	case opc_if_icmpgt: case opc_if_icmple: 
-	case opc_if_acmpeq: case opc_if_acmpne:
 	case opc_lcmp: 
 	case opc_dcmpg: case opc_dcmpl: 
         case opc_ladd: case opc_dadd:
@@ -1536,6 +1532,10 @@ public class ConstantAnalyzer implements Opcodes, CodeAnalyzer {
 	case opc_land: case opc_lor : case opc_lxor:
 	    iter.set(new Instruction(opc_pop2));
 	    /* fall through */
+	case opc_if_icmpeq: case opc_if_icmpne:
+	case opc_if_icmplt: case opc_if_icmpge: 
+	case opc_if_icmpgt: case opc_if_icmple: 
+	case opc_if_acmpeq: case opc_if_acmpne:
 	case opc_fcmpg: case opc_fcmpl:
         case opc_l2i: case opc_l2f: case opc_l2d:
         case opc_d2i: case opc_d2l: case opc_d2f:
