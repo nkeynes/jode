@@ -1,3 +1,6 @@
+New in 1.1.1
+* Only bug fixes
+
 New in 1.1
 * break long lines
 * handle most of javac v8 constructs (jdk 1.3)

@@ -34,7 +34,6 @@ import @COLLECTIONS@.HashMap;
 import @COLLECTIONS@.Iterator;
 import @COLLECTIONS@.List;
 import @COLLECTIONS@.ArrayList;
-import @COLLECTIONS@.Random;
 import @COLLECTIONS@.Arrays;
 import @COLLECTIONS@.Collections;
 
@@ -47,7 +46,6 @@ public class PackageIdentifier extends Identifier {
     boolean loadOnDemand;
     Map loadedClasses;
     List swappedClasses;
-    Random rand = new Random();
 
     public PackageIdentifier(ClassBundle bundle, 
 			     PackageIdentifier parent,
@@ -355,7 +353,7 @@ public class PackageIdentifier extends Identifier {
 	 */
 	if (swappedClasses == null) {
 	    swappedClasses = Arrays.asList(loadedClasses.values().toArray());
-	    Collections.shuffle(swappedClasses, rand);
+	    Collections.shuffle(swappedClasses, Main.rand);
 	}
 	return swappedClasses.iterator();
     }

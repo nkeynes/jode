@@ -199,7 +199,7 @@ public abstract class Identifier {
 	    ((Identifier)i.next()).buildTable(renameRule);
     }
 
-    public void writeTable(Map table) {
+    public void writeTable(Map table, boolean reversed) {
 	if (!isReachable() 
 	    && (Main.stripping & Main.STRIP_UNREACH) != 0) 
 	    return;
@@ -212,11 +212,14 @@ public abstract class Identifier {
 		    name = outer.getName() + "." + name;
 		outer = outer.getParent();
 	    }
-	    table.put(getFullAlias(), name);
+	    if (reversed)
+		table.put(getFullAlias(), name);
+	    else
+		table.put(getFullName(), getAlias());
 	}
 
 	for (Iterator i = getChilds(); i.hasNext(); )
-	    ((Identifier)i.next()).writeTable(table);
+	    ((Identifier)i.next()).writeTable(table, reversed);
     }
 
     public void readTable(Map table) {

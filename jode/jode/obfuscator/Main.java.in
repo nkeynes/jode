@@ -31,6 +31,7 @@ import java.io.FileReader;
 import java.io.InputStreamReader;
 import java.io.IOException;
 import @COLLECTIONS@.Collections;
+import @COLLECTIONS@.Random;
 
 public class Main {
     public static boolean swapOrder   = false;
@@ -58,6 +59,14 @@ public class Main {
     public static final int STRIP_LNT        = 0x0008;
     public static final int STRIP_SOURCE     = 0x0010;
     public static int stripping = 0;
+    /**
+     * A random pool used to destroy order of method identifiers and
+     * classes in packages.  <br>
+     *
+     * A pseudo random is enough, no need to generate the seed
+     * securely.  This makes obfuscating errors reproducable.
+     */
+    public static Random rand = new Random(123456);
 
     private static ClassBundle bundle;
 

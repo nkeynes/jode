@@ -1,5 +1,22 @@
 2001-08-12  Jochen Hoenicke  <jochen@gnu.org>
 
+	* configure.in: Set version number to 1.1.1.
+
+2001-08-12  Jochen Hoenicke  <jochen@gnu.org>
+
+	* jode/obfuscator/Identifier.java.in (writeTable): New boolean
+	parameter specifying if reversed or not.
+	* jode/obfuscator/ClassBundle.java.in: Renamed the table file
+	variables, added outTableFile.
+	(setOption): Support outtable, intable and outrevtable.
+	Support verbose.
+	(writeTable): Writes table unreversed.
+	(writeRevTable): New method, Writes table reversed.
+	* jode/obfuscator/Main.java.in: (rand): New variable.
+	* jode/obfuscator/PackageIdentifier.java.in: Use Main.rand instead
+	of definining its own random.
+	* jode/obfuscator/ClassIdentifier.java.in: likewise.
+
 	* jode/flow/FlowBlock.java.in: 
 	(checkConsistent): Allow lastModified in a finally block.
 
