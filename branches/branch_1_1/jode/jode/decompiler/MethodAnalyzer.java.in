@@ -27,6 +27,7 @@ import jode.bytecode.Handler;
 import jode.bytecode.Instruction;
 import jode.bytecode.LocalVariableInfo;
 import jode.jvm.SyntheticAnalyzer;
+import jode.decompiler.Options;
 import jode.type.*;
 import jode.expr.Expression;
 import jode.expr.ConstOperator;
@@ -866,6 +867,8 @@ public class MethodAnalyzer implements Scope, ClassDeclarer {
 		writer.print(" " + methodName);
 	    }
 	    writer.breakOp();
+	    if ((Options.outputStyle & Options.GNU_SPACING) != 0)
+		writer.print(" ");
             writer.print("(");
  	    writer.startOp(writer.EXPL_PAREN, 0);
 	    int offset = skipParams + (isStatic() ? 0 : 1);
@@ -895,11 +898,11 @@ public class MethodAnalyzer implements Scope, ClassDeclarer {
         }
 	writer.endOp();
         if (code != null) {
-	    writer.openBrace();
+	    writer.openBraceNoIndent();
             writer.tab();
 	    methodHeader.dumpSource(writer);
             writer.untab();
-	    writer.closeBrace();
+	    writer.closeBraceNoIndent();
         } else
             writer.println(";");
 	writer.popScope();

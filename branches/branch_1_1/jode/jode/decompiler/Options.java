@@ -22,10 +22,13 @@ import jode.bytecode.ClassInfo;
 import jode.bytecode.InnerClassInfo;
 
 public class Options {
-    public static final int TAB_SIZE_MASK = 0x0f;
-    public static final int BRACE_AT_EOL  = 0x10;
-    public static final int SUN_STYLE = 0x14;
-    public static final int GNU_STYLE = 0x02;
+    public static final int TAB_SIZE_MASK    = 0x0f;
+    public static final int BRACE_AT_EOL     = 0x10;
+    public static final int BRACE_FLUSH_LEFT = 0x20;
+    public static final int GNU_SPACING      = 0x40;
+    public static final int SUN_STYLE        = 0x14;
+    public static final int GNU_STYLE        = 0x42;
+    public static final int PASCAL_STYLE     = 0x24;
 
     public static final int OPTION_LVT       = 0x0001;
     public static final int OPTION_INNER     = 0x0002;

@@ -103,6 +103,8 @@ public class Decompiler {
 		Options.outputStyle = Options.GNU_STYLE;
 	    else if (value.equals("sun"))
 		Options.outputStyle = Options.SUN_STYLE;
+	    else if (value.equals("pascal"))
+		Options.outputStyle = Options.PASCAL_STYLE;
 	    else
 		throw new IllegalArgumentException("Invalid style "+value);
 	    return;
