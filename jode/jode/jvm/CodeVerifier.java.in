@@ -244,8 +244,8 @@ public class CodeVerifier implements Opcodes {
 	    if (dimensions > 0) {
 		if (dimensions == 1)
 		    return tObject;
-		StringBuffer result = new StringBuffer(dimensions + 18);
-		for (int i=0; i< dimensions; i++)
+		StringBuffer result = new StringBuffer(dimensions + 17);
+		for (int i=0; i < dimensions - 1; i++)
 		    result.append("[");
 		result.append("Ljava/lang/Object;");
 		return tType(result.toString());
