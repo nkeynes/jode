@@ -104,8 +104,9 @@ public class ArrayType extends ReferenceType {
 	if (type == tNull)
 	    return this;
 	if (type.getTypeCode() == TC_ARRAY) {
-	    return tArray(elementType.intersection
-			  (((ArrayType)type).elementType));
+	    Type elType = elementType.intersection
+		(((ArrayType)type).elementType);
+	    return elType != tError ? tArray(elType) : tError;
 	}
 	if (type.getTypeCode() == TC_CLASS) {
 	    ClassInterfacesType other = (ClassInterfacesType) type;
@@ -124,7 +125,7 @@ public class ArrayType extends ReferenceType {
     public Type getGeneralizedType(Type type) {
         /*  tArray(x), tNull     -> tArray(x)
          *  tArray(x), tClass(y) -> common ifaces of tArray and tClass
-         *  tArray(x), tArray(y) -> tArray(x.intersection(y))
+         *  tArray(x), tArray(y) -> tArray(x.intersection(y)) or tObject
          *  tArray(x), other     -> tError
          */
 	if (type.getTypeCode() == TC_RANGE) {
@@ -132,9 +133,11 @@ public class ArrayType extends ReferenceType {
 	}
 	if (type == tNull)
             return this;
-        if (type.getTypeCode() == TC_ARRAY)
-	    return tArray(elementType.intersection
-                          (((ArrayType)type).elementType));
+        if (type.getTypeCode() == TC_ARRAY) {
+	    Type elType = elementType.intersection
+		(((ArrayType)type).elementType);
+	    return elType != tError ? tArray(elType) : tObject;
+	}
 	if (type.getTypeCode() == TC_CLASS) {
 	    ClassInterfacesType other = (ClassInterfacesType) type;
 	    if (implementsAllIfaces(other.clazz, other.ifaces, arrayIfaces))

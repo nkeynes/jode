@@ -1708,7 +1708,8 @@ public class FlowBlock {
             java.io.StringWriter strw = new java.io.StringWriter();
             TabbedPrintWriter writer = new TabbedPrintWriter(strw);
             writer.println(super.toString() + ": "+addr+"-"+(addr+length));
-	    if ((GlobalOptions.debuggingFlags & GlobalOptions.DEBUG_INOUT) != 0) {
+	    if ((GlobalOptions.debuggingFlags 
+		 & GlobalOptions.DEBUG_INOUT) != 0) {
 		writer.println("in: "+in);
 	    }
             writer.tab();

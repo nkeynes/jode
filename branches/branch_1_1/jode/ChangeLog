@@ -1,3 +1,15 @@
+2001-02-01  Jochen Hoenicke  <jochen@gnu.org>
+
+	* jode/jvm/CodeVerifier.java.in (Type.mergeType): If array elem
+	types can't be merged, return tObject as common super type.
+	* jode/type/ArrayType.java (getGeneralizedType): If array elem
+	type can't be intersected, return tObject as common super type.
+	* jode/flow/TransformExceptionHandlers.java.in: Merged patch from
+	the 1.2 tree to support javac 1.3 synchronized blocks.  Doesn't
+	handle nested synchronized blocks yet.
+	* jode/expr/Expression.java.in (dumpExpression): Show runtime
+	exception when it occurs.
+
 2001-01-31  Jochen Hoenicke  <jochen@gnu.org>
 
 	* jode/expr/Expression.java.in (updateParentTypes): Call setType,
