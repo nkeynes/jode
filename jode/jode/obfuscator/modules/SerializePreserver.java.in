@@ -23,7 +23,7 @@ import jode.obfuscator.*;
 import java.lang.reflect.Modifier;
 import @COLLECTIONS@.Collection;
 
-public class SerializePreserver implements IdentifierMatcher {
+public class SerializePreserver implements IdentifierMatcher, OptionHandler {
     boolean onlySUID = true;
 
     public SerializePreserver() {
