@@ -1,3 +1,8 @@
+2001-08-10  Jochen Hoenicke  <jochen@gnu.org>
+
+	* configure.in: Changed bash syntax to more compatible (but
+	slower) syntax.  Fixes bug #448909.	
+
 2001-08-09  Jochen Hoenicke  <jochen@gnu.org>
 
 	* jode/expr/InvokeOperator.java.in (dumpExpression): Fixed the
