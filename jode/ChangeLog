@@ -1,3 +1,8 @@
+2001-07-11  Jochen Hoenicke  <jochen@gnu.org>
+
+	* jode/flow/CatchBlock.java.in (combineLocal):  Added more checks
+	if LocalStoreOperator is of the right form.
+
 2001-07-10  Jochen Hoenicke  <jochen@gnu.org>
 
 	* jode/obfuscator/modules/SimpleAnalyzer.java.in:
