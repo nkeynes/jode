@@ -16,6 +16,9 @@ HTML_FILES = $(PHP_FILES:%.php=$(srcdir)/%.html)
 noinst_DATA = $(HTML_FILES)
 
 EXTRA_DIST = $(PHP_FILES) $(notdir $(HTML_FILES)) \
+header.inc \
+menu.inc \
+footer.inc \
 a-logo.gif \
 myproject.jos \
 dasm_to_java.perl \
