@@ -310,21 +310,6 @@ public class PackageIdentifier extends Identifier {
 	return "";
     }
 
-    public String findAlias(String className) {
-	int index = className.indexOf('.');
-	if (index == -1) {
-	    Identifier ident = getIdentifier(className);
-	    if (ident != null)
-		return ident.getFullAlias();
-	} else {
-	    Identifier pack = getIdentifier(className.substring(0, index));
-	    if (pack != null)
-		return ((PackageIdentifier)pack)
-		    .findAlias(className.substring(index+1));
-	}
-	return className;
-    }
-
     public void buildTable(Renamer renameRule) {
 	loadOnDemand = false;
 	super.buildTable(renameRule);

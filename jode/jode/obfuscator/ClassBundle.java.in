@@ -248,6 +248,13 @@ public class ClassBundle implements OptionHandler {
 	return alias;
     }
 
+    public String getClassAlias(String className) {
+	ClassIdentifier classIdent = getClassIdentifier(className);
+	if (classIdent == null)
+	    return className;
+	return classIdent.getFullAlias();
+    }
+
     public String getTypeAlias(String typeSig) {
 	String alias = (String) aliasesHash.get(typeSig);
 	if (alias == null) { 
@@ -256,7 +263,7 @@ public class ClassBundle implements OptionHandler {
 	    while ((nextindex = typeSig.indexOf('L', index)) != -1) {
 		newSig.append(typeSig.substring(index, nextindex+1));
 		index = typeSig.indexOf(';', nextindex);
-		String typeAlias = basePackage.findAlias
+		String typeAlias = getClassAlias
 		    (typeSig.substring(nextindex+1, index).replace('/','.'));
 		newSig.append(typeAlias.replace('.', '/'));
 	    }
