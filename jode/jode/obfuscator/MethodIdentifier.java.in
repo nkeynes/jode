@@ -169,7 +169,11 @@ public class MethodIdentifier extends Identifier implements Opcodes {
 	if (codeAnalyzer != null) {
 	    BytecodeInfo bytecode = info.getBytecode();
 	    try {
-		codeAnalyzer.transformCode(bytecode);
+		/* Only run analyzer on reachable methods.  Other methods
+		 * weren't analyzed, so running analyzer on them is wrong.
+		 */
+		if (isReachable())
+		    codeAnalyzer.transformCode(bytecode);
 		CodeTransformer[] trafos = bundle.getPostTransformers();
 		for (int i = 0; i < trafos.length; i++) {
 		    trafos[i].transformCode(bytecode);
