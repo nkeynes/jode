@@ -1522,6 +1522,8 @@ public class FlowBlock {
 
     public void simplify() {
 	block.simplify();
+	if (nextByAddr != null)
+	    nextByAddr.simplify();
     }
 
     /**
