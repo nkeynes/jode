@@ -1,4 +1,11 @@
-2002-02-25  Jochen Hoenicke  <hoenicke@marge.Informatik.Uni-Oldenburg.DE>
+2002-06-11  Jochen Hoenicke  <jochen@gnu.org>
+
+	* jode/bytecode/BytecodeInfo.java.in (readAttribute):  Fix the
+	exception handlers that javac 1.4 produces:  I simply shorten
+	the start/end interval, so that the catcher is not in the end
+	interval.
+
+2002-02-25  Jochen Hoenicke  <jochen@gnu.org>
 
 	* jode/bytecode/ClassInfo.java.in (read):  Don't check for a
 	maximum version anymore.  Sun changes it with every release without

@@ -856,6 +856,26 @@ public class BytecodeInfo extends BinaryInfo implements Opcodes {
 		    handlersLength--;
 		    i--;
 		}
+
+		if (exceptionHandlers[i].start.getAddr()
+		       <= exceptionHandlers[i].catcher.getAddr()
+		    && exceptionHandlers[i].end.getAddr()
+		       >= exceptionHandlers[i].catcher.getAddr())
+		{
+		    /* Javac 1.4 is a bit paranoid with finally and
+		     * synchronize blocks and even breaks the JLS.
+		     * We fix it here.  Hopefully this won't produce
+		     * any other problems.
+		     */
+		    if (exceptionHandlers[i].start
+			== exceptionHandlers[i].catcher) {
+			handlersLength--;
+			i--;
+		    } else {
+			exceptionHandlers[i].end = 
+			    exceptionHandlers[i].catcher.getPrevByAddr();
+		    }
+		}
 	    }
 	    if (handlersLength < exceptionHandlers.length) {
 		Handler[] newHandlers = new Handler[handlersLength];
