@@ -28,7 +28,9 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.zip.ZipOutputStream;
+import java.util.zip.ZipFile;
 import java.util.zip.ZipEntry;
+import java.util.Enumeration;
 
 import gnu.getopt.LongOpt;
 import gnu.getopt.Getopt;
@@ -136,6 +138,60 @@ public class Main extends Options {
 	    return false;
 	}
 	return true;
+    }
+
+    public static void decompileClass(String className, 
+				      ZipOutputStream destZip, String destDir, 
+				      TabbedPrintWriter writer,
+				      ImportHandler imports) {
+	try {
+	    ClassInfo clazz;
+	    try {
+		clazz = ClassInfo.forName(className);
+	    } catch (IllegalArgumentException ex) {
+		GlobalOptions.err.println
+			("`"+className+"' is not a class name");
+		return;
+	    }
+	    if (skipClass(clazz))
+		return;
+	    
+	    String filename = 
+		className.replace('.', File.separatorChar)+".java";
+	    if (destZip != null) {
+		writer.flush();
+		destZip.putNextEntry(new ZipEntry(filename));
+	    } else if (destDir != null) {
+		File file = new File (destDir, filename);
+		File directory = new File(file.getParent());
+		if (!directory.exists() && !directory.mkdirs()) {
+		    GlobalOptions.err.println
+			("Could not create directory " 
+			 + directory.getPath() + ", check permissions.");
+		}
+		writer = new TabbedPrintWriter
+		    (new BufferedOutputStream(new FileOutputStream(file)),
+		     imports, false);
+	    }
+
+	    GlobalOptions.err.println(className);
+	    
+	    ClassAnalyzer clazzAna = new ClassAnalyzer(clazz, imports);
+	    clazzAna.dumpJavaFile(writer);
+		
+	    if (destZip != null) {
+		writer.flush();
+		destZip.closeEntry();
+	    } else if (destDir != null)
+		writer.close();
+	    /* Now is a good time to clean up */
+	    System.gc();
+	} catch (IOException ex) {
+	    GlobalOptions.err.println
+		("Can't write source of "+className+".");
+	    GlobalOptions.err.println("Check the permissions.");
+	    ex.printStackTrace(GlobalOptions.err);
+	}
     }
 
     public static void main(String[] params) {
@@ -246,7 +302,7 @@ public class Main extends Options {
 	}
 	if (errorInParams)
 	    return;
-        ClassInfo.setClassPath(classPath.toString());
+        ClassInfo.setClassPath(classPath);
 	ImportHandler imports = new ImportHandler(importPackageLimit,
 						  importClassLimit);
 
@@ -268,51 +324,32 @@ public class Main extends Options {
 	}
         for (int i= g.getOptind(); i< params.length; i++) {
 	    try {
-		ClassInfo clazz;
-		try {
-		    clazz = ClassInfo.forName(params[i]);
-		} catch (IllegalArgumentException ex) {
-		    GlobalOptions.err.println
-			("`"+params[i]+"' is not a class name");
-		    continue;
-		}
-		if (skipClass(clazz))
-		    continue;
-
-		String filename = 
-		    params[i].replace('.', File.separatorChar)+".java";
-		if (destZip != null) {
-		    writer.flush();
-		    destZip.putNextEntry(new ZipEntry(filename));
-		} else if (destDir != null) {
-		    File file = new File (destDir, filename);
-		    File directory = new File(file.getParent());
-		    if (!directory.exists() && !directory.mkdirs()) {
-			GlobalOptions.err.println
-			    ("Could not create directory " 
-			     + directory.getPath() + ", check permissions.");
+		if ((params[i].endsWith(".jar") || params[i].endsWith(".zip"))
+		    && new File(params[i]).isFile()) {
+		    /* The user obviously wants to decompile a jar/zip file.
+		     * Lets do him a pleasure and allow this.
+		     */
+		    ClassInfo.setClassPath(params[i]
+					   + SearchPath.altPathSeparatorChar
+					   + classPath);
+		    Enumeration enum = new ZipFile(params[i]).entries();
+		    while (enum.hasMoreElements()) {
+			String entry
+			    = ((ZipEntry) enum.nextElement()).getName();
+			if (entry.endsWith(".class")) {
+			    entry = entry.substring(0, entry.length() - 6)
+				.replace('/', '.');
+			    decompileClass(entry, destZip, destDir, 
+					   writer, imports);
+			}
 		    }
-		    writer = new TabbedPrintWriter
-			(new BufferedOutputStream(new FileOutputStream(file)),
-			 imports, false);
-		}
-
-		GlobalOptions.err.println(params[i]);
-		
-		ClassAnalyzer clazzAna = new ClassAnalyzer(clazz, imports);
-		clazzAna.dumpJavaFile(writer);
-		
-		if (destZip != null) {
-		    writer.flush();
-		    destZip.closeEntry();
-		} else if (destDir != null)
-		    writer.close();
-		/* Now is a good time to clean up */
-		System.gc();
+		    ClassInfo.setClassPath(classPath);
+		} else
+		    decompileClass(params[i], destZip, destDir, 
+				   writer, imports);
 	    } catch (IOException ex) {
 		GlobalOptions.err.println
-		    ("Can't write source of "+params[i]+".");
-		GlobalOptions.err.println("Check the permissions.");
+		    ("Can't read zip file " + params[i] + ".");
 		ex.printStackTrace(GlobalOptions.err);
 	    }
 	}
