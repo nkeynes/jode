@@ -26,15 +26,6 @@ import jode.expr.LocalStoreOperator;
 import jode.expr.StoreInstruction;
 import jode.util.SimpleSet;
 
-///#ifdef JDK12
-///import java.util.Collections;
-///import java.util.Set;
-///#else
-import jode.util.Collections;
-import jode.util.Set;
-///#endif
-
-
 /**
  * 
  * @author Jochen Hoenicke
@@ -130,10 +121,11 @@ public class CatchBlock extends StructuredBlock {
 	super.removePush();
     }
 
-    public Set getDeclarables() {
+    public SimpleSet getDeclarables() {
+	SimpleSet used = new SimpleSet();
 	if (exceptionLocal != null)
-	    return Collections.singleton(exceptionLocal);
-	return Collections.EMPTY_SET;
+	    used.add(exceptionLocal);
+	return used;
     }
     
     /**
@@ -142,7 +134,7 @@ public class CatchBlock extends StructuredBlock {
      * is marked as used, but not done.
      * @param done The set of the already declare variables.
      */
-    public void makeDeclaration(Set done) {
+    public void makeDeclaration(SimpleSet done) {
 	super.makeDeclaration(done);
 	/* Normally we have to declare our exceptionLocal.  This
 	 * is automatically done in dumpSource.

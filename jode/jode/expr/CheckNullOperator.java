@@ -21,6 +21,7 @@ package jode.expr;
 import jode.type.Type;
 import jode.decompiler.LocalInfo;
 import jode.decompiler.TabbedPrintWriter;
+import jode.flow.VariableSet;
 
 ///#ifdef JDK12
 ///import java.util.Set;
@@ -74,9 +75,9 @@ public class CheckNullOperator extends Operator {
 	local.remove();
     }
 
-    public void fillInGenSet(Set in, Set gen) {
+    public void fillInGenSet(VariableSet in, VariableSet gen) {
 	if (gen != null)
-	    gen.add(local);
+	    gen.addElement(local);
 	super.fillInGenSet(in, gen);
     }
 

@@ -21,6 +21,7 @@ package jode.expr;
 import jode.type.Type;
 import jode.GlobalOptions;
 import jode.decompiler.TabbedPrintWriter;
+import jode.flow.VariableSet;
 
 ///#ifdef JDK12
 ///import java.util.Set;
@@ -228,7 +229,7 @@ public abstract class Expression {
         return true;
     }
 
-    public void fillInGenSet(Set in, Set gen) {
+    public void fillInGenSet(VariableSet in, VariableSet gen) {
     }
 
     public void fillDeclarables(Set used) {
