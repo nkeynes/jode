@@ -2,7 +2,7 @@
 <h1>Download</h1>
 
 <p>Jode is available in the <?
-sflink("project/filelist.php")?>download area</a> in source or
+sflink("project/showfiles.php")?>download area</a> in source or
 binary form.  For compiling the source code, you need several other
 packages, check the <?php selflink("links") ?>links page</a>.  You
 need a unix like environment for compilation.</p>

@@ -42,7 +42,7 @@ body { color:#000000; background-color: #FFFFFF; }
 
 <body text=#000000 bgcolor=#FFFFFF>
 
-<table cellpadding=4 cellspacing=1 width=100%
+<table cellpadding=4 cellspacing=1 width="100%"
   ><tr
     ><td align="left"
       ><img src="jode-logo.gif" alt="JODE" width=286 height=110

@@ -28,6 +28,19 @@ strings.  But <i>JODE</i>'s deobfuscator can undo both.</li>
 href="http://jedit.standmed.com/plugins/JavaInsight">JavaInsight plugin</a> for
 <a href="http://jedit.sourceforge.net/">jEdit</a>.</li>
 </ul>
+<h3>Software Directories</h3>
+<ul>
+<li>Get everything and anything for Linux at the
+     <a href="http://www.linux-directory.com" target="_top"
+     ><IMG SRC="http://www.linux-directory.com/button_88x31.gif" 
+     WIDTH=88 HEIGHT=31 BORDER=0 ALT="Linux Directory"></a>.
+</li>
+<li>A great place for developing free software is
+     <a href="http://sourceforge.net"><img
+      src="http://sourceforge.net/sflogo.php?group_id=3790&type=1"
+      border=0 width=88 height=31 alt="SourceForge"></a>
+</li>
+</ul>
 <h3>Miscellanous packages needed to run JODE</h3>
 <dl>
 <dt>CYGWIN (unix tools for win95/NT)</dt>
