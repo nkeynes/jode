@@ -30,12 +30,16 @@ import java.util.zip.ZipOutputStream;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipEntry;
 import java.util.Enumeration;
+import java.util.Vector;
 
 import gnu.getopt.LongOpt;
 import gnu.getopt.Getopt;
 
 
 public class Main extends Options {
+    private static int successCount = 0;
+    private static Vector failedClasses;
+
     private static final int OPTION_START=0x10000;
     private static final int OPTION_END  =0x20000;
 
@@ -190,11 +194,18 @@ public class Main extends Options {
 		writer.close();
 	    /* Now is a good time to clean up */
 	    System.gc();
+	    successCount++;
 	} catch (IOException ex) {
+	    failedClasses.addElement(className);
 	    GlobalOptions.err.println
 		("Can't write source of "+className+".");
 	    GlobalOptions.err.println("Check the permissions.");
 	    ex.printStackTrace(GlobalOptions.err);
+	} catch (Throwable t) {
+	    failedClasses.addElement(className);
+	    GlobalOptions.err.println
+		    ("Failed to decompile "+className+".");
+	    t.printStackTrace(GlobalOptions.err);
 	}
     }
 
@@ -206,6 +217,7 @@ public class Main extends Options {
 	} catch (Throwable ex) {
 	    ex.printStackTrace();
 	}
+	printSummary();
 	/* When AWT applications are compiled with insufficient
 	 * classpath the type guessing by reflection code can
 	 * generate an awt thread that will prevent normal
@@ -214,11 +226,26 @@ public class Main extends Options {
 	System.exit(0);
     }
 
+    private static void printSummary() {
+	GlobalOptions.err.println();
+	if (failedClasses.size() > 0) {
+	    GlobalOptions.err.println("Failed to decompile these classes:");
+	    Enumeration enum = failedClasses.elements();
+	    while (enum.hasMoreElements()) {
+		GlobalOptions.err.println("\t" + enum.nextElement());
+	    }
+	    GlobalOptions.err.println("Failed to decompile " + failedClasses.size() + " classes.");
+	}
+	GlobalOptions.err.println("Decompiled " + successCount + " classes.");
+    }
+
     public static void decompile(String[] params) {
 	if (params.length == 0) {
 	    usage();
 	    return;
 	}
+
+	failedClasses = new Vector();
 
         String classPath = System.getProperty("java.class.path")
 	    .replace(File.pathSeparatorChar, Decompiler.altPathSeparatorChar);

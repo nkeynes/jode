@@ -1,3 +1,13 @@
+2003-06-11  Jochen Hoenicke  <jochen@gnu.org>
+
+	Added patch from Thomas Oldervoll, to continue decompiling
+	after errors.
+
+	* jode/decompiler/Main.java (decompileClass): Handle all
+	exceptions and add names of failed classes to a vector.
+	(printSummary): New function.
+	(main): call printSummary.
+	
 2002-11-24  Jochen Hoenicke  <jochen@gnu.org>
 
 	* jode/bytecode/ClassInfo.java.in (deprecatedFlag):  Added flag
