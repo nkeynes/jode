@@ -163,7 +163,8 @@ public class SyntheticAnalyzer implements Opcodes {
 		return false;
 	    FieldInfo refField
 		= refClazz.findField(ref.getName(), ref.getType());
-	    if ((refField.getModifiers() & modifierMask) != Modifier.STATIC)
+	    if (refField == null
+		|| (refField.getModifiers() & modifierMask) != Modifier.STATIC)
 		return false;
 	    instr = (Instruction) iter.next();
 	    while (instr.getOpcode() == opc_nop && iter.hasNext())
@@ -208,7 +209,8 @@ public class SyntheticAnalyzer implements Opcodes {
 		return false;
 	    FieldInfo refField
 		= refClazz.findField(ref.getName(), ref.getType());
-	    if ((refField.getModifiers() & modifierMask) != Modifier.STATIC)
+	    if (refField == null
+		|| (refField.getModifiers() & modifierMask) != Modifier.STATIC)
 		return false;
 	    instr = (Instruction) iter.next();
 	    while (instr.getOpcode() == opc_nop && iter.hasNext())
@@ -287,7 +289,8 @@ public class SyntheticAnalyzer implements Opcodes {
 		return false;
 	    FieldInfo refField
 		= refClazz.findField(ref.getName(), ref.getType());
-	    if ((refField.getModifiers() & modifierMask) != 0)
+	    if (refField == null 
+		|| (refField.getModifiers() & modifierMask) != 0)
 		return false;
 	    instr = (Instruction) iter.next();
 	    while (instr.getOpcode() == opc_nop && iter.hasNext())
@@ -332,7 +335,8 @@ public class SyntheticAnalyzer implements Opcodes {
 		return false;
 	    FieldInfo refField
 		= refClazz.findField(ref.getName(), ref.getType());
-	    if ((refField.getModifiers() & modifierMask) != 0)
+	    if (refField == null
+		|| (refField.getModifiers() & modifierMask) != 0)
 		return false;
 
 	    instr = (Instruction) iter.next();
