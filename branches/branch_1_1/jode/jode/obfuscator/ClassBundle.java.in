@@ -300,7 +300,7 @@ public class ClassBundle implements OptionHandler {
 	if (clazzCache.containsKey(name))
 	    return (ClassIdentifier) clazzCache.get(name);
 	ClassIdentifier ident
-	    = (ClassIdentifier) basePackage.getIdentifier(name);
+	    = (ClassIdentifier) basePackage.getClassIdentifier(name);
 	clazzCache.put(name, ident);
 	return ident;
     }
