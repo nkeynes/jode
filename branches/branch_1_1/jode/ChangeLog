@@ -1,5 +1,14 @@
 2005-09-13  Jochen Hoenicke  <jochen@gnu.org>
 
+	Check for NullPointer in SyntheticAnalyzer.  Based on
+	patch suggessted by Peter Klauser (klp at users.sf.net).
+
+	* jode/jvm/SyntheticAnalyzer.java.in:
+	(checkStaticAccess): Check refField for null pointer.
+	(checkAccess): Likewise.
+
+2005-09-13  Jochen Hoenicke  <jochen@gnu.org>
+
 	Added patch from Peter Klauser (klp at users.sf.net), to support
 	packages with same name as classes in the obfuscator.
 
