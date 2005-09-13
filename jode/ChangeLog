@@ -1,3 +1,19 @@
+2005-09-13  Jochen Hoenicke  <jochen@gnu.org>
+
+	Added patch from Peter Klauser (klp at users.sf.net), to support
+	packages with same name as classes in the obfuscator.
+
+	* jode/obfuscator/PackageIdentifier.java.in
+	(loadedPackages): New field, to store packages in separate map.
+	(getIdentifier): Renamed to...
+	(getClassIdentifier): ...this (and return only ClassIdentifier).
+	(setLoadOnDemand): Use loadedPackages.
+	(loadClass): Likewise.
+	(loadMatchingClass): Likewise.
+	(readTable): Likewise.
+	(getChilds): Likewise.
+	(contains): Likewise.
+	
 2003-06-11  Jochen Hoenicke  <jochen@gnu.org>
 
 	Added patch from Thomas Oldervoll, to continue decompiling

@@ -45,6 +45,7 @@ public class PackageIdentifier extends Identifier {
 
     boolean loadOnDemand;
     Map loadedClasses;
+    Map loadedPackages;
     List swappedClasses;
 
     public PackageIdentifier(ClassBundle bundle, 
@@ -56,6 +57,7 @@ public class PackageIdentifier extends Identifier {
 	this.fullName = fullName;
 	this.name = name;
 	this.loadedClasses = new HashMap();
+	this.loadedPackages = new HashMap();
     }
 
     /**
@@ -79,17 +81,18 @@ public class PackageIdentifier extends Identifier {
 		ClassInfo.getClassesAndPackages(getFullName());
 	    while (enum.hasMoreElements()) {
 		String subclazz = ((String)enum.nextElement()).intern();
-		if (loadedClasses.containsKey(subclazz))
-		    continue;
 		String subFull = (fullNamePrefix + subclazz).intern();
-		
-		if (ClassInfo.isPackage(subFull)) {
+
+		if (ClassInfo.isPackage(subFull)
+		    && !loadedPackages.containsKey(subclazz)) {
 		    PackageIdentifier ident = new PackageIdentifier
 			(bundle, this, subFull, subclazz);
-		    loadedClasses.put(subclazz, ident);
+		    loadedPackages.put(subclazz, ident);
 		    swappedClasses = null;
 		    ident.setLoadOnDemand();
-		} else {
+		}
+		if (ClassInfo.exists(subFull)
+		    && !loadedClasses.containsKey(subclazz)) {
 		    ClassIdentifier ident = new ClassIdentifier
 			(this, subFull, subclazz, ClassInfo.forName(subFull));
 		    
@@ -107,40 +110,43 @@ public class PackageIdentifier extends Identifier {
 	}
     }
 
-    public Identifier getIdentifier(String name) {
+    public ClassIdentifier getClassIdentifier(String name) {
 	if (loadOnDemand) {
-	    Identifier ident = loadClass(name);
+	    ClassIdentifier ident = loadClass(name);
 	    return ident;
 	}
 	int index = name.indexOf('.');
 	if (index == -1)
-	    return (Identifier) loadedClasses.get(name);
+	    return (ClassIdentifier) loadedClasses.get(name);
 	else {
 	    PackageIdentifier pack = (PackageIdentifier) 
-		loadedClasses.get(name.substring(0, index));
+		loadedPackages.get(name.substring(0, index));
 	    if (pack != null)
-		return pack.getIdentifier(name.substring(index+1));
+		return pack.getClassIdentifier(name.substring(index+1));
 	    else
 		return null;
 	}
     }
 
-    public Identifier loadClass(String name) {
+    public ClassIdentifier loadClass(String name) {
 	int index = name.indexOf('.');
 	if (index == -1) {
-	    Identifier ident = (Identifier) loadedClasses.get(name);
+	    ClassIdentifier ident = (Identifier) loadedClasses.get(name);
 	    if (ident == null) {
 		String subFull = 
 		   (fullName.length() > 0) ? fullName + "."+ name : name;
 		subFull = subFull.intern();
-		if (ClassInfo.isPackage(subFull)) {
+
+		/* may be a package to load with the same name as class */
+		if (ClassInfo.isPackage(subFull)
+		    && !loadedPackages.containsKey(name)) {
 		    PackageIdentifier pack
 			= new PackageIdentifier(bundle, this, subFull, name);
-		    loadedClasses.put(name, pack);
+		    loadedPackages.put(name, pack);
 		    swappedClasses = null;
 		    pack.setLoadOnDemand();
-		    ident = pack;
-		} else if (!ClassInfo.exists(subFull)) {
+		}
+		if (!ClassInfo.exists(subFull)) {
 		    GlobalOptions.err.println("Warning: Can't find class "
 					      + subFull);
 		    Thread.dumpStack();
@@ -157,7 +163,7 @@ public class PackageIdentifier extends Identifier {
 	} else {
 	    String subpack = name.substring(0, index);
 	    PackageIdentifier pack = 
-		(PackageIdentifier) loadedClasses.get(subpack);
+		(PackageIdentifier) loadedPackages.get(subpack);
 	    if (pack == null) {
 		String subFull = (fullName.length() > 0)
 		    ? fullName + "."+ subpack : subpack;
@@ -165,7 +171,7 @@ public class PackageIdentifier extends Identifier {
 		if (ClassInfo.isPackage(subFull)) {
 		    pack = new PackageIdentifier(bundle, this, 
 						 subFull, subpack);
-		    loadedClasses.put(subpack, pack);
+		    loadedPackages.put(subpack, pack);
 		    swappedClasses = null;
 		    if (loadOnDemand)
 			pack.setLoadOnDemand();
@@ -182,45 +188,45 @@ public class PackageIdentifier extends Identifier {
     public void loadMatchingClasses(IdentifierMatcher matcher) {
 	String component = matcher.getNextComponent(this);
 	if (component != null) {
-	    Identifier ident = (Identifier) loadedClasses.get(component);
-	    if (ident == null) {
-		component = component.intern();
-		String subFull = (fullName.length() > 0)
-		    ? fullName + "."+ component : component;
-		subFull = subFull.intern();
-		if (ClassInfo.isPackage(subFull)) {
-		    ident = new PackageIdentifier(bundle, this, 
-						  subFull, component);
+	    component = component.intern();
+	    String subFull = (fullName.length() > 0)
+		? fullName + "."+ component : component;
+	    subFull = subFull.intern();
+	    if (loadedClasses.get(component) == null
+		&& ClassInfo.exists(subFull)) {
+		if (GlobalOptions.verboseLevel > 1)
+		    GlobalOptions.err.println("loading Class " +subFull);
+		ClassIdentifier ident = 
+		    new ClassIdentifier(this, subFull, component, 
+					ClassInfo.forName(subFull));
+		if (loadOnDemand || matcher.matches(ident)) {
 		    loadedClasses.put(component, ident);
 		    swappedClasses = null;
-		    if (loadOnDemand)
-			((PackageIdentifier) ident).setLoadOnDemand();
-		} else if (ClassInfo.exists(subFull)) {
-		    if (GlobalOptions.verboseLevel > 1)
-			GlobalOptions.err.println("loading Class " +subFull);
-		    ident = new ClassIdentifier(this, subFull, component, 
-						ClassInfo.forName(subFull));
-		    if (loadOnDemand || matcher.matches(ident)) {
-			loadedClasses.put(component, ident);
-			swappedClasses = null;
-			bundle.addClassIdentifier(ident);
-			((ClassIdentifier) ident).initClass();
-		    }
-		} else {
-		    GlobalOptions.err.println
-			("Warning: Can't find class/package " + subFull);
+		    bundle.addClassIdentifier(ident);
+		    ident.initClass();
 		}
 	    }
-	    if (ident instanceof PackageIdentifier) {
-		if (matcher.matches(ident)) {
+	    /* can be a package AND a class with the same name */
+	    PackageIdentifier pkgIdent = 
+		(PackageIdentifier) loadedPackages.get(component);
+	    if (pkgIdent == null && ClassInfo.isPackage(subFull)) {
+		pkgIdent = new PackageIdentifier(bundle, this, 
+						 subFull, component);
+		loadedPackages.put(component, pkgIdent);
+		swappedClasses = null;
+		if (loadOnDemand)
+		    pkgIdent.setLoadOnDemand();
+	    }
+	    if (pkgIdent != null) {
+		if (matcher.matches(pkgIdent)) {
 		    if (GlobalOptions.verboseLevel > 0)
 			GlobalOptions.err.println("loading Package "
-						  +ident.getFullName());
-		    ((PackageIdentifier) ident).setLoadOnDemand();
+						  +pkgIdent.getFullName());
+		    pkgIdent.setLoadOnDemand();
 		}
 
-		if (matcher.matchesSub(ident, null))
-		    ((PackageIdentifier) ident).loadMatchingClasses(matcher);
+		if (matcher.matchesSub(pkgIdent, null))
+		    pkgIdent.loadMatchingClasses(matcher);
 	    }
 	} else {
 	    String fullNamePrefix = 
@@ -230,22 +236,24 @@ public class PackageIdentifier extends Identifier {
 		ClassInfo.getClassesAndPackages(getFullName());
 	    while (enum.hasMoreElements()) {
 		String subclazz = ((String)enum.nextElement()).intern();
-		if (loadedClasses.containsKey(subclazz))
-		    continue;
 		String subFull = (fullNamePrefix + subclazz).intern();
 		
 		if (matcher.matchesSub(this, subclazz)) {
-		    if (ClassInfo.isPackage(subFull)) {
+		    if (ClassInfo.isPackage(subFull)
+			&& !loadedPackages.containsKey(subclazz)) {
 			if (GlobalOptions.verboseLevel > 0)
 			    GlobalOptions.err.println("loading Package "
 						      + subFull);
 			PackageIdentifier ident = new PackageIdentifier
 			    (bundle, this, subFull, subclazz);
-			loadedClasses.put(subclazz, ident);
+			loadedPackages.put(subclazz, ident);
 			swappedClasses = null;
 			if (loadOnDemand || matcher.matches(ident))
 			    ident.setLoadOnDemand();
-		    } else {
+		    }
+
+		    if (ClassInfo.exists(subFull)
+			&& !loadedClasses.containsKey(subclazz)) {
 			ClassIdentifier ident = new ClassIdentifier
 			    (this, subFull, subclazz, 
 			     ClassInfo.forName(subFull));
@@ -263,17 +271,15 @@ public class PackageIdentifier extends Identifier {
 		}
 	    }
 	    List list = new ArrayList();
-	    list.addAll(loadedClasses.values());
+	    list.addAll(loadedPackages.values());
 	    for (Iterator i = list.iterator(); i.hasNext(); ) {
-		Identifier ident = (Identifier) i.next();
-		if (ident instanceof PackageIdentifier) {
-		    if (matcher.matches(ident))
-			((PackageIdentifier) ident).setLoadOnDemand();
-		    
-		    if (matcher.matchesSub(ident, null))
-			((PackageIdentifier) ident)
-			    .loadMatchingClasses(matcher);
-		}
+		PackageIdentifier ident = (PackageIdentifier) i.next();
+		if (matcher.matches(ident))
+		    ((PackageIdentifier) ident).setLoadOnDemand();
+		
+		if (matcher.matchesSub(ident, null))
+		    ((PackageIdentifier) ident)
+			.loadMatchingClasses(matcher);
 	    }
 	}
     }
@@ -332,6 +338,12 @@ public class PackageIdentifier extends Identifier {
 		|| ident.isReachable())
 		ident.readTable(table);
 	}
+	for (Iterator i = loadedPackages.values().iterator(); i.hasNext(); ) {
+	    Identifier ident = (Identifier) i.next();
+	    if ((Main.stripping & Main.STRIP_UNREACH) == 0
+		|| ident.isReachable())
+		ident.readTable(table);
+	}
     }
 
     public Identifier getParent() {
@@ -352,7 +364,8 @@ public class PackageIdentifier extends Identifier {
 	 * even parts of the names.
 	 */
 	if (swappedClasses == null) {
-	    swappedClasses = Arrays.asList(loadedClasses.values().toArray());
+	    swappedClasses = new ArrayList(loadedClasses.values());
+	    swappedClasses.addAll(loadedPackages.values());
 	    Collections.shuffle(swappedClasses, Main.rand);
 	}
 	return swappedClasses.iterator();
@@ -439,16 +452,19 @@ public class PackageIdentifier extends Identifier {
 
     public boolean contains(String newAlias, Identifier except) {
 	for (Iterator i = loadedClasses.values().iterator(); i.hasNext(); ) {
-	    Identifier ident = (Identifier)i.next();
+	    ClassIdentifier ident = (ClassIdentifier)i.next();
 	    if (ident != except) {
 		if (((Main.stripping & Main.STRIP_UNREACH) == 0
 		     || ident.isReachable())
 			&& ident.getAlias().equalsIgnoreCase(newAlias))
 		    return true;
-		if (ident instanceof PackageIdentifier
-		    && ident.getAlias().length() == 0
-		    && (((PackageIdentifier) ident)
-			.contains(newAlias, this)))
+	    }
+	}
+	for (Iterator i = loadedPackages.values().iterator(); i.hasNext(); ) {
+	    PackageIdentifier ident = (PackageIdentifier)i.next();
+	    if (ident != except) {
+		if (ident.getAlias().length() == 0
+		    && ident.contains(newAlias, this))
 		    return true;
 	    }
 	}
