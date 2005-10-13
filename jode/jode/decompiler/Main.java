@@ -230,9 +230,9 @@ public class Main extends Options {
 	GlobalOptions.err.println();
 	if (failedClasses.size() > 0) {
 	    GlobalOptions.err.println("Failed to decompile these classes:");
-	    Enumeration enum = failedClasses.elements();
-	    while (enum.hasMoreElements()) {
-		GlobalOptions.err.println("\t" + enum.nextElement());
+	    Enumeration enumeration = failedClasses.elements();
+	    while (enumeration.hasMoreElements()) {
+		GlobalOptions.err.println("\t" + enumeration.nextElement());
 	    }
 	    GlobalOptions.err.println("Failed to decompile " + failedClasses.size() + " classes.");
 	}
@@ -387,10 +387,10 @@ public class Main extends Options {
 		    ClassInfo.setClassPath(params[i]
 					   + Decompiler.altPathSeparatorChar
 					   + classPath);
-		    Enumeration enum = new ZipFile(params[i]).entries();
-		    while (enum.hasMoreElements()) {
+		    Enumeration enumeration = new ZipFile(params[i]).entries();
+		    while (enumeration.hasMoreElements()) {
 			String entry
-			    = ((ZipEntry) enum.nextElement()).getName();
+			    = ((ZipEntry) enumeration.nextElement()).getName();
 			if (entry.endsWith(".class")) {
 			    entry = entry.substring(0, entry.length() - 6)
 				.replace('/', '.');

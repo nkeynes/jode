@@ -124,14 +124,14 @@ public class ClassInfo extends BinaryInfo {
     }
     
     public static Enumeration getClassesAndPackages(final String packageName) {
-        final Enumeration enum = 
+        final Enumeration enumeration = 
             classpath.listFiles(packageName.replace('.','/'));
         return new Enumeration() {
             public boolean hasMoreElements() {
-                return enum.hasMoreElements();
+                return enumeration.hasMoreElements();
             }
             public Object nextElement() {
-                String name = (String) enum.nextElement();
+                String name = (String) enumeration.nextElement();
                 if (!name.endsWith(".class"))
 		    // This is a package
 		    return name;

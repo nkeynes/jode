@@ -77,10 +77,10 @@ public class PackageIdentifier extends Identifier {
 		(fullName.length() > 0) ? fullName + "." : "";
 
 	    // Load all classes and packages now, so they don't get stripped
-	    Enumeration enum = 
+	    Enumeration enumeration = 
 		ClassInfo.getClassesAndPackages(getFullName());
-	    while (enum.hasMoreElements()) {
-		String subclazz = ((String)enum.nextElement()).intern();
+	    while (enumeration.hasMoreElements()) {
+		String subclazz = ((String)enumeration.nextElement()).intern();
 		String subFull = (fullNamePrefix + subclazz).intern();
 
 		if (ClassInfo.isPackage(subFull)
@@ -232,10 +232,10 @@ public class PackageIdentifier extends Identifier {
 	    String fullNamePrefix = 
 		(fullName.length() > 0) ? fullName + "." : "";
 	    /* Load all matching classes and packages */
-	    Enumeration enum = 
+	    Enumeration enumeration = 
 		ClassInfo.getClassesAndPackages(getFullName());
-	    while (enum.hasMoreElements()) {
-		String subclazz = ((String)enum.nextElement()).intern();
+	    while (enumeration.hasMoreElements()) {
+		String subclazz = ((String)enumeration.nextElement()).intern();
 		String subFull = (fullNamePrefix + subclazz).intern();
 		
 		if (matcher.matchesSub(this, subclazz)) {
