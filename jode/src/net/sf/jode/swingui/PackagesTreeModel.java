@@ -48,6 +48,7 @@ import java.util.NoSuchElementException;
 public class PackagesTreeModel implements TreeModel {
     Map cachedChildrens = new HashMap();
     Main main;
+    ClassPath classPath;
 
     class TreeElement implements Comparable {
 	String fullName;
@@ -97,11 +98,13 @@ public class PackagesTreeModel implements TreeModel {
     TreeElement root = new TreeElement("", "", false);
     Set listeners = new HashSet();
 
-    public PackagesTreeModel(Main main) {
-	this.main = main;
+    public PackagesTreeModel(ClassPath classPath) {
+	this.classPath = classPath;
     }
 
-    public void rebuild() {
+    public void setClassPath(ClassPath classPath) {
+	this.classPath = classPath;
+
 	cachedChildrens.clear();
 	TreeModelListener[] ls;
 	synchronized (listeners) {
@@ -111,12 +114,9 @@ public class PackagesTreeModel implements TreeModel {
 	TreeModelEvent ev = new TreeModelEvent(this, new Object[] { root });
 	for (int i=0; i< ls.length; i++)
 	    ls[i].treeStructureChanged(ev);
-
-	main.reselect();
     }
 
     public TreeElement[] getChildrens(TreeElement parent) {
-	ClassPath classPath = main.getClassPath();
 	TreeElement[] result = 
 	    (TreeElement[]) cachedChildrens.get(parent);
 	if (result == null) {

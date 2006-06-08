@@ -146,7 +146,7 @@ public abstract class FieldOperator extends Operator {
         return Type.tType(classPath, ref.getType());
     }
 
-    private FieldInfo[] loadFields(ClassInfo clazz) {
+    private void loadFields(ClassInfo clazz) {
 	int howMuch = (clazz.getName().startsWith(callerPackage)
 		       && (clazz.getName().lastIndexOf('.')
 			   < callerPackage.length()))
@@ -158,12 +158,12 @@ public abstract class FieldOperator extends Operator {
 				      +clazz+" to detect hiding conflicts");
 	    clazz.guess(howMuch);
 	}
-	return clazz.getFields();
     }
 
-    private static FieldInfo getFieldInfo(ClassInfo clazz, 
-					  String name, String type) {
+    private FieldInfo getFieldInfo(ClassInfo clazz, 
+				   String name, String type) {
 	while (clazz != null) {
+	    loadFields(clazz);
 	    FieldInfo field = clazz.findField(name, type);
 	    if (field != null)
 		return field;
@@ -181,14 +181,14 @@ public abstract class FieldOperator extends Operator {
     }
     
     public FieldInfo getFieldInfo() {
-	ClassInfo clazz;
-	if (ref.getClazz().charAt(0) == '[')
-	    clazz = classPath.getClassInfo("java.lang.Object");
-	else
-	    clazz = TypeSignature.getClassInfo(classPath, ref.getClazz());
-        return getFieldInfo(clazz, ref.getName(), ref.getType());
+        return getFieldInfo(classInfo, ref.getName(), ref.getType());
     }
 
+    /**
+     * Checks if we need a cast to the super class, to which the field
+     * belongs.
+     * @param type the canonic type of the zeroth subexpression.
+     */
     public boolean needsCast(Type type) {
 	if (type instanceof NullType)
 	    return true;
@@ -196,46 +196,43 @@ public abstract class FieldOperator extends Operator {
 	      && classType instanceof ClassInfoType))
 	    return false;
 	
-	ClassInfo clazz = ((ClassInfoType) classType).getClassInfo();
-	ClassInfo parClazz = ((ClassInfoType) type).getClassInfo();
-	FieldInfo field = clazz.findField(ref.getName(), ref.getType());
-
-	find_field:
-	while (field == null) {
-	    ClassInfo ifaces[] = clazz.getInterfaces();
-	    for (int i = 0; i < ifaces.length; i++) {
-		field = ifaces[i].findField(ref.getName(), ref.getType());
-		if (field != null)
-		    break find_field;
-	    }
-	    clazz = clazz.getSuperclass();
-	    if (clazz == null)
-		/* Weird, field not existing? */
-		return false;
-	    field = clazz.findField(ref.getName(), ref.getType());
+	ClassInfo subexprClass = ((ClassInfoType) type).getClassInfo();
+	FieldInfo field = getFieldInfo();
+	if (field == null) {
+	    /* Weird, field not existing? */
+	    return false;
 	}	    
+
+	/**
+	 * We need an explicit cast if we access a private field 
+	 * of a parent class (which is only possible if the parent
+	 * class is an outer class of the current class).
+	 */
 	if (Modifier.isPrivate(field.getModifiers()))
-	    return parClazz != clazz;
+	    return subexprClass != classInfo;
 	else if ((field.getModifiers() 
 		  & (Modifier.PROTECTED | Modifier.PUBLIC)) == 0) {
-	    /* Field is protected.  We need a cast if parClazz is in
-	     * other package than clazz.
+	    /* Field is protected.  We need a cast if subexprClass is in
+	     * other package than classInfo.
 	     */
-	    int lastDot = clazz.getName().lastIndexOf('.');
+	    int lastDot = classInfo.getName().lastIndexOf('.');
 	    if (lastDot == -1
-		|| lastDot != parClazz.getName().lastIndexOf('.')
-		|| !(parClazz.getName()
-		     .startsWith(clazz.getName().substring(0,lastDot))))
+		|| lastDot != subexprClass.getName().lastIndexOf('.')
+		|| !(subexprClass.getName()
+		     .startsWith(classInfo.getName().substring(0,lastDot))))
 		return true;
 	}
 	    
-	while (clazz != parClazz && clazz != null) {
-	    FieldInfo[] fields = parClazz.getFields();
+	/* We also need an explicit cast if the field is hidden by a
+	 * declaration in param class.
+	 */
+	while (classInfo != subexprClass && classInfo != null) {
+	    FieldInfo[] fields = subexprClass.getFields();
 	    for (int i = 0; i < fields.length; i++) {
 		if (fields[i].getName().equals(ref.getName()))
 		    return true;
 	    }
-	    parClazz = parClazz.getSuperclass();
+	    subexprClass = subexprClass.getSuperclass();
 	}
 	return false;
     }
@@ -275,7 +272,6 @@ public abstract class FieldOperator extends Operator {
 		writer.breakOp();
 		writer.print(".");
 	    }
-	    writer.print(fieldName);
 	} else if (needsCast(subExpressions[0].getType().getCanonic())) {
 	    writer.print("(");
 	    writer.startOp(writer.EXPL_PAREN, 1);
@@ -288,36 +284,33 @@ public abstract class FieldOperator extends Operator {
 	    writer.print(")");
 	    writer.breakOp();
 	    writer.print(".");
-	    writer.print(fieldName);
-	} else {
-	    if (opIsThis) {
-		ThisOperator thisOp = (ThisOperator) subExpressions[0];
-		Scope scope = writer.getScope(thisOp.getClassInfo(),
-					      Scope.CLASSSCOPE);
-
-		if (scope == null || writer.conflicts(fieldName, scope, 
-						      Scope.FIELDNAME)) {
-		    thisOp.dumpExpression(writer, 950);
-		    writer.breakOp();
-		    writer.print(".");
-		} else if (writer.conflicts(fieldName, scope, 
+	} else if (opIsThis) {
+	    ThisOperator thisOp = (ThisOperator) subExpressions[0];
+	    Scope scope = writer.getScope(thisOp.getClassInfo(),
+					  Scope.CLASSSCOPE);
+	    
+	    if (scope == null || writer.conflicts(fieldName, scope, 
+						  Scope.FIELDNAME)) {
+		thisOp.dumpExpression(writer, 950);
+		writer.breakOp();
+		writer.print(".");
+	    } else if (writer.conflicts(fieldName, scope, 
 					    Scope.AMBIGUOUSNAME)
-			   || (/* This is a inherited field conflicting
-				* with a field name in some outer class.
-				*/
-			       getField() == null 
-			       && writer.conflicts(fieldName, null,
-				 Scope.NOSUPERFIELDNAME))) {
-		    thisOp.dumpExpression(writer, 950);
-		    writer.breakOp();
-		    writer.print(".");
-		}
-	    } else {
-		subExpressions[0].dumpExpression(writer, 950);
+		       || (/* This is a inherited field conflicting
+			    * with a field name in some outer class.
+			    */
+			   getField() == null 
+			   && writer.conflicts(fieldName, null,
+					       Scope.NOSUPERFIELDNAME))) {
+		thisOp.dumpExpression(writer, 950);
 		writer.breakOp();
 		writer.print(".");
 	    }
-	    writer.print(fieldName);
+	} else {
+	    subExpressions[0].dumpExpression(writer, 950);
+	    writer.breakOp();
+	    writer.print(".");
 	}
+	writer.print(fieldName);
     }
 }

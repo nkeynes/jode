@@ -19,6 +19,9 @@
 
 package net.sf.jode.bytecode;
 import net.sf.jode.util.UnifyHash;
+///#def COLLECTIONS java.util
+import java.util.Map;
+///#enddef
 
 /**
  * This class contains some static methods to handle type signatures. <br>
@@ -213,12 +216,21 @@ public class TypeSignature {
      * @param position the index to the last entry.
      * @return the index to the next entry.
      */
-    static int skipType(String methodTypeSig, int position) {
+    public static int skipType(String methodTypeSig, int position) {
 	char c = methodTypeSig.charAt(position++);
 	while (c == '[')
 	    c = methodTypeSig.charAt(position++);
-	if (c == 'L')
-	    return methodTypeSig.indexOf(';', position) + 1;
+	if (c == 'L' || c == 'T') {
+	    int angledepth = 0;
+	    c = methodTypeSig.charAt(position++);
+	    while (c != ';' || angledepth > 0) {
+		if (c == '<')
+		    angledepth++;
+		else if (c == '>')
+		    angledepth--;
+		c = methodTypeSig.charAt(position++);
+	    }
+	}
 	return position;
     }
     
@@ -264,11 +276,49 @@ public class TypeSignature {
     }
 
     /**
+     * Gets the argument type signatures of the given template signature.
+     * @param templateTypeSig the template type signature.
+     * @return an array containing all parameter types in correct order.
+     */
+    public static String[] getArgumentTypes(String templateTypeSig) {
+	System.err.println(templateTypeSig);
+	int pos = 1;
+	int count = 0;
+	char c;
+	while ((c = templateTypeSig.charAt(pos)) != '>') {
+	    if (c == '*') {
+		pos++;
+	    } else {
+		if (c == '+' || c == '-')
+		    pos++;
+		pos = skipType(templateTypeSig, pos);
+	    }
+	    count++;
+	}
+	String[] params = new String[count];
+	pos = 1;
+	for (int i = 0; i < count; i++) {
+	    int start = pos;
+	    c = templateTypeSig.charAt(pos);
+	    if (c == '*') {
+		pos++;
+	    } else {
+		if (c == '+' || c == '-')
+		    pos++;
+		pos = skipType(templateTypeSig, pos);
+	    }
+	    params[i] = templateTypeSig.substring(start, pos);
+	}
+	return params;
+    }
+
+    /**
      * Gets the parameter type signatures of the given method signature.
      * @param methodTypeSig the method type signature.
      * @return an array containing all parameter types in correct order.
      */
     public static String[] getParameterTypes(String methodTypeSig) {
+	System.err.println(methodTypeSig);
 	int pos = 1;
 	int count = 0;
 	while (methodTypeSig.charAt(pos) != ')') {
@@ -292,6 +342,128 @@ public class TypeSignature {
      */
     public static String getReturnType(String methodTypeSig) {
 	return methodTypeSig.substring(methodTypeSig.lastIndexOf(')')+1);
+    }
+
+    /**
+     * Gets the names of the generic parameters of the given type signature.
+     * @param typeSig the type signature.
+     * @return an array containing all generic parameter types 
+     * in correct order, or null if there aren't any generic parameters.
+     */
+    public static String[] getGenericNames(String typeSig) {
+	System.err.println(typeSig);
+	if (typeSig.charAt(0) != '<')
+	    return null;
+	int pos = 1;
+	int count = 0;
+	while (typeSig.charAt(pos) != '>') {
+	    while (typeSig.charAt(pos) != ':')
+		pos++;
+	    /* check for empty entry */
+	    if (typeSig.charAt(pos+1) == ':')
+		pos++;
+	    while (typeSig.charAt(pos) == ':') {
+		/* skip colon and type */
+		pos = skipType(typeSig, pos + 1);
+	    }
+	    count++;
+	}
+	String[] params = new String[count];
+	pos = 1;
+	count = 0;
+	while (typeSig.charAt(pos) != '>') {
+	    int spos = pos;
+	    while (typeSig.charAt(pos) != ':')
+		pos++;
+	    params[count++] = typeSig.substring(spos, pos);
+	    /* check for empty entry */
+	    if (typeSig.charAt(pos+1) == ':')
+		pos++;
+	    while (typeSig.charAt(pos) == ':') {
+		/* skip colon and type */
+		pos = skipType(typeSig, pos + 1);
+	    }
+	}
+	return params;
+    }
+
+    private static int mapGenericsInType(String typeSig, Map generics,
+					 StringBuffer mapped, int spos) {
+	int pos = spos;
+	char c = typeSig.charAt(pos++);
+	while (c == '[')
+	    c = typeSig.charAt(pos++);
+	if (c == 'T') {
+	    int epos = typeSig.indexOf(';', pos);
+	    String key = typeSig.substring(pos, epos);
+	    String mapval = (String) generics.get(key);
+	    if (mapval != null) {
+		mapped.append(typeSig.substring(spos, pos - 1))
+		    .append(key);
+		spos = epos + 1;
+	    }
+	    pos = epos + 1;
+	} else if (c == 'L') {
+	    c = typeSig.charAt(pos++);
+	    while (c != ';' && c != '<')
+		c = typeSig.charAt(pos++);
+	    if (c == '<') {
+		mapped.append(typeSig.substring(spos, pos));
+		while (typeSig.charAt(pos) != '>') {
+		    pos = mapGenericsInType(typeSig, generics, mapped, pos);
+		}
+		spos = pos;
+		pos += 2;
+	    }
+	}
+	mapped.append(typeSig.substring(spos, pos));
+	return pos;
+    }
+
+    /**
+     * Map the names of the generic parameters in the given type signature
+     * and return the type signature with the generic parameters mapped to
+     * (more or less) real types.
+     * @param typeSig the type signature.
+     * @param generics A map from generic names to type signatures.
+     * @return the mapped generic type signature.
+     */
+    public static String mapGenerics(String typeSig, Map generics) {
+	StringBuffer mapped = new StringBuffer();
+	int pos = 0;
+	int spos = 0;
+	if (typeSig.length() == 0)
+	    return "";
+	char c = typeSig.charAt(pos++);
+	if (c == '<') {
+	    c = typeSig.charAt(pos++);
+	    while (c != '>') {
+		while (c != ':') {
+		    c = typeSig.charAt(pos++);
+		}
+		if (typeSig.charAt(pos) == ':')
+		    pos++;
+		while (c == ':') {
+		    mapped.append(typeSig.substring(spos, pos));
+		    pos = mapGenericsInType(typeSig, generics, mapped, pos);
+		    spos = pos;
+		    c = typeSig.charAt(pos);
+		}
+	    }
+	}
+	if (c == '(') {
+	    while (typeSig.charAt(pos) != ')') {
+		mapped.append(typeSig.substring(spos, pos));
+		pos = mapGenericsInType(typeSig, generics, mapped, pos);
+		spos = pos;
+	    }
+	    pos++;
+	}
+	mapped.append(typeSig.substring(spos, pos));
+	while (pos < typeSig.length()) {
+	    pos = mapGenericsInType(typeSig, generics, mapped, pos);
+	}
+	return mapped.toString();
     }
 
     /**
@@ -329,16 +501,36 @@ public class TypeSignature {
 
     /**
      * Checks if there is a valid class name starting at index
-     * in string typesig and ending with a semicolon.
+     * in string typeSig and ending with a semicolon.
      * @return the index at which the class name ends.
      * @exception IllegalArgumentException if there was an illegal character.
-     * @exception StringIndexOutOfBoundsException if the typesig ended early.
+     * @exception StringIndexOutOfBoundsException if the typeSig ended early.
      */
     private static int checkClassName(String clName, int i) 
 	throws IllegalArgumentException, StringIndexOutOfBoundsException 
     {
 	while (true) {
 	    char c = clName.charAt(i++);
+	    if (c == '<') {
+		c = clName.charAt(i++);
+		do {
+		    if (c == '*')
+			i++;
+		    else { 
+			if (c == '+' || c == '-')
+			    c = clName.charAt(i++);
+			if (c != 'L' && c != 'T' && c != '[')
+			    throw new IllegalArgumentException
+				("Wrong class instantiation: "+clName);
+			i = checkTypeSig(clName, i - 1);
+		    }
+		    c = clName.charAt(i++);
+		} while (c != '>');
+		c = clName.charAt(i++);
+		if (c != ';')
+		    throw new IllegalArgumentException
+			("no ; after > in "+clName);
+	    }
 	    if (c == ';')
 		return i;
 	    if (c != '/' && !Character.isJavaIdentifierPart(c))
@@ -348,77 +540,170 @@ public class TypeSignature {
     }
 
     /**
+     * Checks if there is a valid class name starting at index
+     * in string typeSig and ending with a semicolon.
+     * @return the index at which the class name ends.
+     * @exception IllegalArgumentException if there was an illegal character.
+     * @exception StringIndexOutOfBoundsException if the typeSig ended early.
+     */
+    private static int checkTemplateName(String clName, int i) 
+	throws IllegalArgumentException, StringIndexOutOfBoundsException 
+    {
+	while (true) {
+	    char c = clName.charAt(i++);
+	    if (c == ';')
+		return i;
+	    if (!Character.isJavaIdentifierPart(c))
+		throw new IllegalArgumentException("Illegal java class name: "
+						   + clName);
+	}
+    }
+
+    /**
      * Checks if there is a valid simple type signature starting at index
-     * in string typesig.
+     * in string typeSig.
      * @return the index at which the type signature ends.
      * @exception IllegalArgumentException if there was an illegal character.
-     * @exception StringIndexOutOfBoundsException if the typesig ended early.
+     * @exception StringIndexOutOfBoundsException if the typeSig ended early.
      */
-    private static int checkTypeSig(String typesig, int index) {
-	char c = typesig.charAt(index++);
+    private static int checkTypeSig(String typeSig, int index) {
+	char c = typeSig.charAt(index++);
 	while (c == '[')
-	    c = typesig.charAt(index++);
+	    c = typeSig.charAt(index++);
 	if (c == 'L') {
-	    index = checkClassName(typesig, index);
+	    index = checkClassName(typeSig, index);
+	} else if (c == 'T') {
+	    index = checkTemplateName(typeSig, index);
 	} else {
 	    if ("ZBSCIJFD".indexOf(c) == -1)
-		throw new IllegalArgumentException("Type sig error: "+typesig);
+		throw new IllegalArgumentException("Type sig error: "+typeSig);
 	}
 	return index;
     }
 
     /**
+     * Checks whether a given type signature starts with valid generic
+     * part and returns the index where generics end.
+     * @param typeSig the type signature.
+     * @param i the start index.
+     * @exception NullPointerException if typeSig is null.
+     * @exception IllegalArgumentException if typeSig is not a valid
+     * type signature.
+     * @return 0 if no generics at beginning, otherwise the 
+     * index after the &gt; sign.
+     */
+    private static int checkGenerics(String typeSig, int i) {
+	if (typeSig.charAt(i) == '<') {
+	    i++;
+	    char c = typeSig.charAt(i++);
+	    if (c == '>')
+		throw new IllegalArgumentException("Empty Generics: "+typeSig);
+	    while (c != '>') {
+		if (c == ':')
+		    throw new IllegalArgumentException("Empty type name: "+typeSig);
+		while (c != ':') {
+		    if (!Character.isJavaIdentifierPart(c))
+			throw new IllegalArgumentException
+			    ("Illegal generic name: "+ typeSig);
+		    c = typeSig.charAt(i++);
+		}
+		c = typeSig.charAt(i++);
+		if (c != 'L' && c != 'T' && c != ':')
+		    throw new IllegalArgumentException
+			("Wrong generic extends: "+typeSig);
+		if (c != ':')
+		    i = checkTypeSig(typeSig, i - 1);
+
+		c = typeSig.charAt(i++);
+		while(c == ':') {
+		    i = checkTypeSig(typeSig, i);
+		    c = typeSig.charAt(i++);
+		}
+	    }
+	}
+	return i;
+    }
+
+    /**
      * Checks whether a given type signature is a valid (not method)
      * type signature.  Throws an exception otherwise.
-     * @param typesig the type signature.
+     * @param typeSig the type signature.
      * @exception NullPointerException if typeSig is null.
      * @exception IllegalArgumentException if typeSig is not a valid
      * type signature or if it's a method type signature.
      */
-    public static void checkTypeSig(String typesig) 
+    public static void checkTypeSig(String typeSig) 
 	throws IllegalArgumentException
     {
 	try {
-	    if (checkTypeSig(typesig, 0) != typesig.length())
+	    int i = checkGenerics(typeSig, 0);
+	    if (checkTypeSig(typeSig, i) != typeSig.length())
 		throw new IllegalArgumentException
-		    ("Type sig too long: "+typesig);
+		    ("Type sig too long: "+typeSig);
 	} catch (StringIndexOutOfBoundsException ex) {
 	    throw new IllegalArgumentException
-		("Incomplete type sig: "+typesig);
+		("Incomplete type sig: "+typeSig);
+	}
+    }
+
+    /**
+     * Checks whether a given type signature is a valid class
+     * type signature.  Throws an exception otherwise.
+     * A class type signature starts optionally with generics,
+     * followed by type signature of super class, followed by
+     * type signature of super interfaces.
+     * @param typeSig the type signature.
+     * @exception NullPointerException if typeSig is null.
+     * @exception IllegalArgumentException if typeSig is not a valid
+     * type signature or if it's a method type signature.
+     */
+    public static void checkClassTypeSig(String typeSig) 
+	throws IllegalArgumentException
+    {
+	try {
+	    int i = checkGenerics(typeSig, 0);
+	    i = checkTypeSig(typeSig, i);
+	    while (i != typeSig.length()) {
+		i = checkTypeSig(typeSig, i);
+	    }
+	} catch (StringIndexOutOfBoundsException ex) {
+	    throw new IllegalArgumentException
+		("Incomplete type sig: "+typeSig);
 	}
     }
 
     /**
      * Checks whether a given type signature is a valid method
      * type signature.  Throws an exception otherwise.
-     * @param typesig the type signature.
+     * @param typeSig the type signature.
      * @exception NullPointerException if typeSig is null.
      * @exception IllegalArgumentException if typeSig is not a valid
      * method type signature.
      */
-    public static void checkMethodTypeSig(String typesig) 
+    public static void checkMethodTypeSig(String typeSig) 
 	throws IllegalArgumentException
     {
 	try {
-	    if (typesig.charAt(0) != '(')
+	    int i = checkGenerics(typeSig, 0);
+	    if (typeSig.charAt(i) != '(')
 		throw new IllegalArgumentException
-		    ("No method signature: "+typesig);
-	    int i = 1;
-	    while (typesig.charAt(i) != ')')
-		i = checkTypeSig(typesig, i);
+		    ("No method signature: "+typeSig);
+	    i++;
+	    while (typeSig.charAt(i) != ')')
+		i = checkTypeSig(typeSig, i);
 	    // skip closing parenthesis.
 	    i++;
-	    if (typesig.charAt(i) == 'V')
+	    if (typeSig.charAt(i) == 'V')
 		// accept void return type.
 		i++;
 	    else
-		i = checkTypeSig(typesig, i);
-	    if (i != typesig.length())
+		i = checkTypeSig(typeSig, i);
+	    if (i != typeSig.length())
 		throw new IllegalArgumentException
-		    ("Type sig too long: "+typesig);
+		    ("Type sig too long: "+typeSig);
 	} catch (StringIndexOutOfBoundsException ex) {
 	    throw new IllegalArgumentException
-		("Incomplete type sig: "+typesig);
+		("Incomplete type sig: "+typeSig);
 	}
     }
 }

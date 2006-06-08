@@ -19,6 +19,7 @@
 
 package net.sf.jode.type;
 import net.sf.jode.bytecode.ClassPath;
+import net.sf.jode.bytecode.TypeSignature;
 
 /** 
  * This type represents an method type.
@@ -35,30 +36,17 @@ public class MethodType extends Type {
 	super(TC_METHOD);
 	this.cp = cp;
         this.signature = signature;
-        int index = 1, types = 0;
-        while (signature.charAt(index) != ')') {
-            types++;
-            while (signature.charAt(index) == '[')
-                index++;
-            if (signature.charAt(index) == 'L')
-                index = signature.indexOf(';', index);
-            index++;
-        }
-        parameterTypes = new Type[types];
-
-        index = 1;
-        types = 0;
-        while (signature.charAt(index) != ')') {
-            int lastindex = index;
-            while (signature.charAt(index) == '[')
-                index++;
-            if (signature.charAt(index) == 'L')
-                index = signature.indexOf(';', index);
-            index++;
-            parameterTypes[types++] 
-                = Type.tType(cp, signature.substring(lastindex,index));
-        }
-        returnType = Type.tType(cp, signature.substring(index+1));
+	if (signature.charAt(0) == '<') {
+	    /*FIXME */
+	    signature = signature.substring(signature.indexOf('('));
+	}
+	String[] params = TypeSignature.getParameterTypes(signature);
+	parameterTypes = new Type[params.length];
+	for (int i = 0; i < params.length; i++) {
+	    parameterTypes[i] = Type.tType(cp, params[i]);
+	}
+	returnType = Type.tType(cp, 
+				signature.substring(signature.indexOf(')')+1));
     }
 
     public final int stackSize() {

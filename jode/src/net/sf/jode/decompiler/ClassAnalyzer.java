@@ -50,6 +50,8 @@ public class ClassAnalyzer
     ClassInfo clazz;
     ClassDeclarer parent;
     ProgressListener progressListener;
+    String[] generics;
+    Type[]   genericTypes;
 
     /**
      * The complexity for initi#alizing a class.
@@ -94,9 +96,47 @@ public class ClassAnalyzer
 	throws ClassFormatException, IOException
     {
 	clazz.load(ClassInfo.ALL);
+	String signatures = clazz.getSignature();
+	if (signatures.charAt(0) == '<') {
+	    String[] genericSignatures = signature.getGenericNames();
+	    generics = new String[genericSignatures.length];
+	    for (int i = 0; i < generics.length; i++) {
+		int colon = genericSignatures[i].charAt(':');
+		String genName;
+		if (colon == -1) {
+		    generics[i] = genericSignatures[i];
+		    genericType[i] = 
+			new GenericParameterType(genericSignatures[i],
+						 Type.tObject,
+						 new ClassType[0]);
+		} else {
+		    generics[i] = genericSignatures[i].substring(0, colon);
+		    String remainder = genericSignatures[i].substring(colon+1);
+		    int nextIndex = remainder.skipType(remainder, 0);
+		    List superClazzes;
+		    for (;;) {
+			String clazzSig = remainder.substring(0, nextIndex);
+			superClazzes.add(Type.tType(clazzSig));
+			if (nextIndex >= remainder.length())
+			    break;
+			remainder = remainder.substring(nextIndex+1);
+		    }
+		    ClassType genSupClass = (ClassType) superClazzes.get(0);
+		    if (!genSupClass.isInterface())
+			superClazzes.remove(0);
+		    else
+			genSupClass = Type.tObject;
+		    ClassType[] genSupIfaces = (ClassType[]) 
+			superClazzes.toArray(new ClassType[0]);
+		    genericType[i] = new GenericParameterType(generics[i],
+							      genSupClass,
+							      genSupIfaces);
+		}
+	    }
+	}
 	ClassInfo superClass = clazz.getSuperclass();
 	String myPackage = clazz.getName().substring
-	    (clazz.getName().lastIndexOf('.') + 1);
+		(clazz.getName().lastIndexOf('.') + 1);
 	while (superClass != null) {
 	    int howMuch = (superClass.getName().startsWith(myPackage)
 			   && (superClass.getName().lastIndexOf('.')
@@ -497,6 +537,8 @@ public class ClassAnalyzer
 	if (!clazz.isInterface())
 	    writer.print("class ");
 	writer.print(name);
+	String signature = clazz.getSignature();
+	System.err.println("Class Signature: "+signature+ " (class "+name+")");
 	ClassInfo superClazz = clazz.getSuperclass();
 	if (superClazz != null && 
 	    superClazz.getName() != "java.lang.Object") {

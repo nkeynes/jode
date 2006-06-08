@@ -19,6 +19,7 @@
 
 package net.sf.jode.obfuscator.modules;
 import net.sf.jode.obfuscator.*;
+import net.sf.jode.bytecode.*;
 
 /**
  * This class replaces accesses to local fields and .

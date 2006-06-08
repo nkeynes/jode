@@ -37,7 +37,8 @@ import java.util.ResourceBundle;
 import java.util.*;
 
 public class Main 
-    implements ActionListener, Runnable, TreeSelectionListener {
+    implements ActionListener, Runnable, 
+               TreeSelectionListener, TreeModelListener {
     Decompiler decompiler;
     JFrame frame;
     JTree classTree;
@@ -68,9 +69,9 @@ public class Main
 		    if (classTree != null)
 			classTree.clearSelection();
 		    if (packModel != null)
-			packModel.rebuild();
+			packModel.setClassPath(classPath);
 		    if (hierModel != null && hierarchyTree) {
-			hierModel.rebuild();
+			hierModel.setClassPath(classPath);
 		    } else {
 			hierModel = null;
 		    }
@@ -113,8 +114,9 @@ public class Main
     public void fillContentPane(Container contentPane) {
 	statusLine = new JPanel();
 	hierarchyTree = false;
-	packModel = new PackagesTreeModel(this);
+	packModel = new PackagesTreeModel(getClassPath());
 	hierModel = null;
+	packModel.addTreeModelListener(this);
 	Font monospaced = new Font("monospaced", Font.PLAIN, 12);
 	classTree = new JTree(packModel);
 	classTree.setRootVisible(false);
@@ -353,8 +355,9 @@ public class Main
 	    public void actionPerformed(ActionEvent ev) {
 		hierarchyTree = hierItem.isSelected();
 		if (hierarchyTree && hierModel == null) {
-		    hierModel = new HierarchyTreeModel(Main.this, progressBar);
-		    reselect();
+		    hierModel = new HierarchyTreeModel(getClassPath(), 
+						       progressBar);
+		    hierModel.addTreeModelListener(Main.this);
 		}
 		classTree.setModel(hierarchyTree
 				   ? (TreeModel) hierModel : packModel);

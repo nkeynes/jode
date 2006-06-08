@@ -234,6 +234,8 @@ public class GrowableConstantPool extends ConstantPool {
     public int putConstant(Object c) {
 	if (c instanceof String) {
 	    return putIndexed(STRING, c, putUTF8((String) c), 0);
+	} else if (c instanceof Reference) {
+	    return putClassType(((Reference) c).getClazz());
 	} else {
 	    int tag;
 	    if (c instanceof Integer)
@@ -279,6 +281,13 @@ public class GrowableConstantPool extends ConstantPool {
     public int reserveConstant(Object c) {
 	if (c instanceof String) {
 	    return putIndexed(STRING, c, -1, 0);
+	} else if (c instanceof Reference) {
+	    String name = ((Reference) c).getClazz();
+	    if (name.charAt(0) == 'L')
+		name = name.substring(1, name.length()-1);
+	    else if (name.charAt(0) != '[')
+		throw new IllegalArgumentException("wrong class type: "+name);
+	    return putIndexed(CLASS, name, -1, 0);
 	} else {
 	    return putConstant(c);
         }

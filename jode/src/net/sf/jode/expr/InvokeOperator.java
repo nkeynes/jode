@@ -415,7 +415,7 @@ public final class InvokeOperator extends Operator
      * Checks, whether this is a call of a method from the super class.
      */
     public boolean isSuperOrThis() {
-	return classType.maybeSubTypeOf
+	return classType.maybeSuperTypeOf
 	    (Type.tClass(methodAnalyzer.getClazz()));
     }
 
@@ -515,7 +515,7 @@ public final class InvokeOperator extends Operator
 	    }
 	    return null;
 	}
-	return new ConstOperator(result);
+	return new ConstOperator(classPath, result);
     }
 
     public Expression simplifyStringBuffer() {
@@ -524,7 +524,7 @@ public final class InvokeOperator extends Operator
 	    if (isConstructor() 
 		&& subExpressions[0] instanceof NewOperator) {
 		if (methodType.getParameterTypes().length == 0)
-		    return EMPTYSTRING;
+		    return emptyString();
 		if (methodType.getParameterTypes().length == 1
 		    && methodType.getParameterTypes()[0].equals(Type.tString))
 		    return subExpressions[1].simplifyString();
@@ -540,14 +540,14 @@ public final class InvokeOperator extends Operator
 		
 		subExpressions[1] = subExpressions[1].simplifyString();
 		
-		if (firstOp == EMPTYSTRING
+		if (isEmptyString(firstOp)
 		    && subExpressions[1].getType().isOfType(Type.tString))
 		    return subExpressions[1];
 		
 		if (firstOp instanceof StringAddOperator
-		    && (((Operator)firstOp).getSubExpressions()[0]
-			== EMPTYSTRING))
-		    firstOp = ((Operator)firstOp).getSubExpressions()[1];
+		    && isEmptyString(((Operator) firstOp)
+				     .getSubExpressions()[0]))
+		    firstOp = ((Operator) firstOp).getSubExpressions()[1];
 		
 		Expression secondOp = subExpressions[1];
 		Type[] paramTypes = new Type[] {
@@ -566,6 +566,15 @@ public final class InvokeOperator extends Operator
 	    }
 	}
         return null;
+    }
+
+    public boolean isEmptyString(Expression expr) {
+	return (expr instanceof ConstOperator
+		&& ((ConstOperator) expr).getValue() == "");
+    }
+
+    public ConstOperator emptyString() {
+	return new ConstOperator(classPath, "");
     }
 
     public Expression simplifyString() {
@@ -588,7 +597,7 @@ public final class InvokeOperator extends Operator
 	    
 	    Operator op = new StringAddOperator();
 	    op.addOperand(subExpressions[0]);
-	    op.addOperand(EMPTYSTRING);
+	    op.addOperand(emptyString());
 	}
 	/* The pizza way (pizza is the compiler of kaffe) */
 	else if (getMethodName().equals("concat")
@@ -600,7 +609,7 @@ public final class InvokeOperator extends Operator
 	    if (right instanceof StringAddOperator) {
 		Operator op = (Operator) right;
 		if (op.subExpressions != null
-		    && op.subExpressions[0] == EMPTYSTRING)
+		    && isEmptyString(op.subExpressions[0]))
 		    right = op.subExpressions[1];
 	    }
 	    result.addOperand(right);

@@ -25,8 +25,8 @@ import net.sf.jode.decompiler.TabbedPrintWriter;
 public class ClassFieldOperator extends NoArgOperator {
     Type classType;
 
-    public ClassFieldOperator(Type classType) {
-        super(Type.tJavaLangClass);
+    public ClassFieldOperator(Type javaLangClass, Type classType) {
+        super(javaLangClass);
         this.classType = classType;
     }
 

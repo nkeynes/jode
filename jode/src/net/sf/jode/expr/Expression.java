@@ -204,8 +204,6 @@ public abstract class Expression {
         return this;
     }
 
-    public static Expression EMPTYSTRING = new ConstOperator("");
-
     public Expression simplifyStringBuffer() {
         return null;
     }

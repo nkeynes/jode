@@ -19,6 +19,7 @@
 
 package net.sf.jode.type;
 import net.sf.jode.bytecode.ClassInfo;
+import net.sf.jode.bytecode.TypeSignature;
 import net.sf.jode.GlobalOptions;
 
 import java.lang.reflect.Modifier;
@@ -26,6 +27,10 @@ import java.io.IOException;
 import java.util.Vector;
 import java.util.Stack;
 import java.util.Hashtable;
+
+///#def COLLECTIONS java.util
+import java.util.Map;
+///#enddef
 
 /**
  * This class is the type representing a class loaded from a ClassPath.<p>
@@ -40,8 +45,9 @@ public class ClassInfoType extends ClassType {
         return clazz;
     }
 
-    public ClassInfoType(ClassInfo clazz) {
+    public ClassInfoType(ClassInfo clazz, Type[] generics) {
         super(TC_CLASS, clazz.getName());
+	
 	this.clazz = clazz;
 	try {
 	    clazz.load(ClassInfo.HIERARCHY);
@@ -52,6 +58,32 @@ public class ClassInfoType extends ClassType {
 		 " types may be incorrect.");
 	    GlobalOptions.err.println(ex.toString());
 	}
+
+	String signature = clazz.getSignature();
+	
+	if (signature.length() == 0) {
+	    /* This is only true for java.lang.Object, each other
+	     * class needs at least a super class.
+	     */
+	    return;
+	}
+
+	genInstances = generics;
+	if (generics != null) {
+	    /* parse generic names */
+	    String[] genNames;
+	    if (signature.charAt(0) == '<')
+		genNames = TypeSignature.getGenericNames(signature);
+	
+	    if (genNames == null)
+		throw new IllegalArgumentException
+		    ("Generic parameters for non-generic class");
+	    if (generics.length != genNames.length)
+		throw new IllegalArgumentException
+		    ("Wrong number of generic parameters");
+	}
+
+	signature = TypeSignature.mapGenerics(signature, getGenerics());
     }
 
     public boolean isUnknown() {
@@ -102,7 +134,3 @@ public class ClassInfoType extends ClassType {
 	return super.equals(o);
     }
 }
-
-
-
-

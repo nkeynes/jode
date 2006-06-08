@@ -31,6 +31,16 @@ public class BasicBlockWriterTest extends TestCase implements Opcodes {
      */
     private final static String someNopsStr="\0\0";
 
+    private void assertCodeEquals(String message,
+				  String expected, byte[] code) {
+	if (code.length != expected.length())
+	    fail(message);
+	for (int i = 0; i < code.length; i++) {
+	    if (code[i] != (byte) expected.charAt(i))
+		fail(message);
+	}
+    }
+
     public void setUp() {
 	Instruction nop = Instruction.forOpcode(opc_nop);
 	someNops = new Instruction[] { nop, nop };
@@ -66,11 +76,11 @@ public class BasicBlockWriterTest extends TestCase implements Opcodes {
 	BasicBlockWriter bbw = new BasicBlockWriter(bb, gcp);
 	gcp.write(new DataOutputStream(new ByteArrayOutputStream()));
 
-	assertEquals("Code differs",
-		     "\0\0\0\1\0\0\0\1" /* no stack, one local, length 1 */
-		     +"\261" /* opc_return */
-		     +"\0\0" /* no exception handlers */,
-		     new String(write(bbw)));
+	assertCodeEquals("Code differs",
+			 "\0\0\0\1\0\0\0\1" /* no stack, one local, length 1 */
+			 +"\261" /* opc_return */
+			 +"\0\0" /* no exception handlers */,
+			 write(bbw));
     }
 
     public void testSimple() throws IOException {
@@ -83,11 +93,11 @@ public class BasicBlockWriterTest extends TestCase implements Opcodes {
 	BasicBlockWriter bbw = new BasicBlockWriter(bb, gcp);
 	gcp.write(new DataOutputStream(new ByteArrayOutputStream()));
 
-	assertEquals("Code differs",
-		     "\0\0\0\1\0\0\0\5" /* no stack, one local, length 5 */
-		     +someNopsStr+someNopsStr+"\261"
-		     +"\0\0" /* no exception handlers */,
-		     new String(write(bbw)));
+	assertCodeEquals("Code differs",
+			 "\0\0\0\1\0\0\0\5" /* no stack, one local, length 5 */
+			 +someNopsStr+someNopsStr+"\261"
+			 +"\0\0" /* no exception handlers */,
+			 write(bbw));
     }
 
     public void testWhile() throws IOException {
@@ -110,11 +120,12 @@ public class BasicBlockWriterTest extends TestCase implements Opcodes {
 	assertEquals(9, bbw.blockAddr[3]);
 	assertEquals(16, bbw.blockAddr[4]);
 
-	assertEquals("Code differs",
-		     "\0\2\0\3\0\0\0\20"
-		     +whileHeadStr+whileCondStr+"\237\0\13"
-		     +someNopsStr+whileFootStr+"\247\377\366"+"\261"+"\0\0",
-		     new String(write(bbw)));
+	assertCodeEquals
+	    ("Code differs",
+	     "\0\2\0\3\0\0\0\20"
+	     +whileHeadStr+whileCondStr+"\237\0\13"
+	     +someNopsStr+whileFootStr+"\247\377\366"+"\261"+"\0\0",
+	     write(bbw));
     }
 
     public void testTableSwitch() throws IOException {
@@ -134,13 +145,14 @@ public class BasicBlockWriterTest extends TestCase implements Opcodes {
 	assertEquals(0, bbw.blockAddr[0]);
 	assertEquals(36, bbw.blockAddr[1]);
 	assertEquals(39, bbw.blockAddr[2]);
-	assertEquals("Code differs",
-		     "\0\1\0\2\0\0\0\47"
-		     +"\33\252\0\0" /*iload_0 + tableswitch + align */
-		     +"\0\0\0\45\0\0\0\1\0\0\0\5" /* def, low, high */
-		     +"\0\0\0\43\0\0\0\45\0\0\0\45\0\0\0\45\377\377\377\377"
-		     +someNopsStr+"\261"+"\0\0",
-		     new String(write(bbw)));
+	assertCodeEquals
+	    ("Code differs",
+	     "\0\1\0\2\0\0\0\47"
+	     +"\33\252\0\0" /*iload_0 + tableswitch + align */
+	     +"\0\0\0\45\0\0\0\1\0\0\0\5" /* def, low, high */
+	     +"\0\0\0\43\0\0\0\45\0\0\0\45\0\0\0\45\377\377\377\377"
+	     +someNopsStr+"\261"+"\0\0",
+	     write(bbw));
     }
 
     public void testLookupSwitch() throws IOException {
@@ -160,15 +172,15 @@ public class BasicBlockWriterTest extends TestCase implements Opcodes {
 	assertEquals(0, bbw.blockAddr[0]);
 	assertEquals(36, bbw.blockAddr[1]);
 	assertEquals(39, bbw.blockAddr[2]);
-	assertEquals("Code differs",
-		     "\0\1\0\2\0\0\0\47"
-		     +"\33\253\0\0" /*iload_0 + lookupswitch + align */
-		     +"\0\0\0\45\0\0\0\3"   /* def , nitem */
-		     +"\0\0\0\1\0\0\0\43"
-		     +"\0\0\0\5\0\0\0\45"
-		     +"\0\0\0\7\377\377\377\377"
-		     +someNopsStr+"\261"+"\0\0",
-		     new String(write(bbw)));
+	assertCodeEquals("Code differs",
+			 "\0\1\0\2\0\0\0\47"
+			 +"\33\253\0\0" /*iload_0 + lookupswitch + align */
+			 +"\0\0\0\45\0\0\0\3"   /* def , nitem */
+			 +"\0\0\0\1\0\0\0\43"
+			 +"\0\0\0\5\0\0\0\45"
+			 +"\0\0\0\7\377\377\377\377"
+			 +someNopsStr+"\261"+"\0\0",
+			 write(bbw));
     }
 
     public void testException() throws IOException {
@@ -194,11 +206,11 @@ public class BasicBlockWriterTest extends TestCase implements Opcodes {
 	assertEquals(0, bbw.blockAddr[0]);
 	assertEquals(3, bbw.blockAddr[1]);
 	assertEquals(4, bbw.blockAddr[2]);
-	assertEquals("Code differs",
-		     "\0\1\0\1\0\0\0\4"
-		     + someNopsStr + "\261" + "\277"
-		     + "\0\1\0\0\0\3\0\3\0"+(char)cpoolEntry,
-		     new String(write(bbw)));
+	assertCodeEquals("Code differs",
+			 "\0\1\0\1\0\0\0\4"
+			 + someNopsStr + "\261" + "\277"
+			 + "\0\1\0\0\0\3\0\3\0"+(char)cpoolEntry,
+			 write(bbw));
     }
 
     public static Test suite() {

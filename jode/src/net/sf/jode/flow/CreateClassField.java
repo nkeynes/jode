@@ -74,7 +74,8 @@ public class CreateClassField {
 	    if (put.getField().setClassConstant(clazz)) {
 		ClassPath cp = invoke.getClassPath();
 		cmp.setSubExpressions
-		    (0, new ClassFieldOperator(clazz.charAt(0) == '[' 
+		    (0, new ClassFieldOperator(put.getType(),
+					       clazz.charAt(0) == '[' 
 					       ? Type.tType(cp, clazz)
 					       : Type.tClass(cp, clazz)));
 		EmptyBlock empty = new EmptyBlock();

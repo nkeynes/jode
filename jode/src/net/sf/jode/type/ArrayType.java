@@ -86,11 +86,11 @@ public class ArrayType extends ClassType {
 	return tArray(elementType.getCanonic());
     }
     
-    public boolean isSubTypeOf(Type type) {
+    public boolean isSuperTypeOf(Type type) {
 	if (type == tNull)
 	    return true;
 	if (type instanceof ArrayType)
-	    return elementType.isSubTypeOf(((ArrayType) type).elementType);
+	    return elementType.isSuperTypeOf(((ArrayType) type).elementType);
 	return false;
     }
 
@@ -133,7 +133,7 @@ public class ArrayType extends ClassType {
 		(((ArrayType)type).elementType);
 	    return elType != tError ? tArray(elType) : tError;
 	}
-	if (type.isSubTypeOf(this))
+	if (type.isSuperTypeOf(this))
 	    return this;
 	return tError;
     }

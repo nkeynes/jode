@@ -869,6 +869,10 @@ public final class ClassInfo extends BinaryInfo implements Comparable {
 	}
 	if (deprecatedFlag)
 	    gcp.putUTF8("Deprecated");
+	if (signature != null) {
+	    gcp.putUTF8("Signature");
+	    gcp.putUTF8(signature);
+	}
 	prepareAttributes(gcp);
     }
 
@@ -935,6 +939,11 @@ public final class ClassInfo extends BinaryInfo implements Comparable {
 	if (deprecatedFlag) {
 	    output.writeShort(gcp.putUTF8("Deprecated"));
 	    output.writeInt(0);
+	}
+	if (signature != null) {
+	    output.writeShort(gcp.putUTF8("Signature"));
+	    output.writeInt(2);
+	    output.writeShort(gcp.putUTF8(signature));
 	}
     }
 
@@ -1195,7 +1204,9 @@ public final class ClassInfo extends BinaryInfo implements Comparable {
     /**
      * Gets the type signature including template information of the class.
      * <b>WARNING:</b> This field may disappear and merged into getType later.
-     * @return the type signature.
+     * The type signature of a class consists of the signature for the 
+     * superclass followed by the signatures of the interfaces.
+     * @return the type signature, empty string for java.lang.Object.
      * @see TypeSignature
      */
     public String getSignature() {
@@ -1203,6 +1214,8 @@ public final class ClassInfo extends BinaryInfo implements Comparable {
             throw new IllegalStateException("status is "+status);
         if (signature != null)
 	    return signature;
+	if (superclass == null)
+	    return "";
 	StringBuffer sb = new StringBuffer();
 	sb.append('L').append(superclass.getName().replace('.','/'))
 	    .append(";");

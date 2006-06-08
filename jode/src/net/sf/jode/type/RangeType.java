@@ -19,6 +19,7 @@
 
 package net.sf.jode.type;
 import net.sf.jode.GlobalOptions;
+import net.sf.jode.bytecode.ClassInfo;
 import java.util.Hashtable;
 
 /**
@@ -52,19 +53,9 @@ import java.util.Hashtable;
  * @date 98/08/06 */
 public class RangeType extends Type {
     /**
-     * The bottom type set.  It is special in that its interpretation
-     * depends on what ReferenceType class it implements:
-     *
-     * <dl>
-     * <dt>MultiClassType</dt>
-     * <dd>All types in this range must be widening castable to all classes
-     * in the bottomType</dd>	
-     * <dt>ArrayType</dt>
-     * <dd>All types in this range must be of the bottomType, or the
-     * NullType.</dd>
-     * <dt>NullType</dt>
-     * <dd>not allowed</dd>
-     * </dl> */
+     * The bottom type set.  Each type in the set represented by
+     * this range type can be casted to all types in bottom type.
+     */
     final ReferenceType bottomType;
     /**
      * The top type set.  For each type in this range type, there is a 
@@ -75,8 +66,7 @@ public class RangeType extends Type {
     /**
      * Create a new range type with the given bottom and top set.
      */
-    public RangeType(ReferenceType bottomType, 
-		     ReferenceType topType) {
+    RangeType(ReferenceType bottomType, ReferenceType topType) {
         super(TC_RANGE);
 	if (bottomType == tNull)
 	    throw new InternalError("bottom is NULL");
@@ -89,7 +79,7 @@ public class RangeType extends Type {
      * be casted to all bottom types by a widening cast.
      * @return the bottom type set 
      */
-    public ReferenceType getBottom() {
+    ReferenceType getBottom() {
         return bottomType;
     }
 
@@ -98,7 +88,7 @@ public class RangeType extends Type {
      * there is a top type, that can be casted to this type.  
      * @return the top type set
      */
-    public ReferenceType getTop() {
+    ReferenceType getTop() {
         return topType;
     }
 
@@ -191,6 +181,24 @@ public class RangeType extends Type {
                 && bottomType.equals(type.bottomType);
         }
         return false;
+    }
+
+    public boolean containsClass(ClassInfo clazz) {
+	ClassType clazzType = Type.tClass(clazz, null);
+	if (!bottomType.maybeSuperTypeOf(clazzType))
+	    return false;
+	if (topType == tNull)
+	    return true;
+	if (topType instanceof ClassType)
+	    return clazzType.maybeSuperTypeOf((ClassType) topType);
+	if (topType instanceof MultiClassType) {
+	    ClassType[] classes = ((MultiClassType) topType).classes;
+	    for (int i = 0; i < classes.length; i++) {
+		if (clazzType.maybeSuperTypeOf(classes[i]))
+		    return true;
+	    }
+	}
+	return false;
     }
 
     /**

@@ -57,7 +57,12 @@ public class FieldAnalyzer implements Analyzer {
 	this.isSynthetic = fd.isSynthetic();
 	this.isDeprecated = fd.isDeprecated();
         if (fd.getConstant() != null) {
-	    constant = new ConstOperator(fd.getConstant());
+	    if (fd.getConstant() instanceof String) {
+		constant = new ConstOperator(cla.getClassPath(), 
+					     (String) fd.getConstant());
+	    } else {
+		constant = new ConstOperator(fd.getConstant());
+	    }
 	    constant.setType(type);
 	    constant.makeInitializer(type);
         }

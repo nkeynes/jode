@@ -302,7 +302,7 @@
 
   <target name="test" depends="build-test">
     <mkdir dir="${test.log}"/>
-    <junit printsummary="yes" fork="yes" haltonfailure="yes">
+    <junit printsummary="yes" haltonfailure="yes">
       <classpath>
         <pathelement path="${test.build}"/>
         <pathelement path="${build}"/>
@@ -319,7 +319,7 @@
 
   <target name="test-cvs" depends="build-test">
     <mkdir dir="${test.log}"/>
-    <junit printsummary="yes" fork="yes" haltonfailure="yes">
+    <junit printsummary="yes" haltonfailure="yes">
       <classpath>
         <pathelement path="${test.build}"/>
         <pathelement path="${build}"/>

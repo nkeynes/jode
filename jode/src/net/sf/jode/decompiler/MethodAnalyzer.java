@@ -199,7 +199,7 @@ public class MethodAnalyzer implements Scope, ClassDeclarer {
         this.imports = imports;
 	this.minfo = minfo;
         this.methodName = minfo.getName();
-        this.methodType = Type.tMethod(cla.getClassPath(), minfo.getType());
+        this.methodType = Type.tMethod(cla.getClassPath(), minfo.getSignature());
         this.isConstructor = 
             methodName.equals("<init>") || methodName.equals("<clinit>");
         

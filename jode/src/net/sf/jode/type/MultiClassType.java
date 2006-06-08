@@ -64,9 +64,9 @@ public class MultiClassType extends ReferenceType {
      * Returns true, iff this type implements all interfaces in type 
      * and extends all objects in type.
      */
-    public boolean isSubTypeOf(Type type) {
+    public boolean isSuperTypeOf(Type type) {
 	for (int i = 0; i < classes.length; i++)
-	    if (!classes[i].isSubTypeOf(type))
+	    if (!classes[i].isSuperTypeOf(type))
 		return false;
 	return true;
     }
@@ -75,9 +75,9 @@ public class MultiClassType extends ReferenceType {
      * Returns true, iff this type implements all interfaces in type 
      * and extends all objects in type.
      */
-    public boolean maybeSubTypeOf(Type type) {
+    public boolean maybeSuperTypeOf(ClassType type) {
 	for (int i = 0; i < classes.length; i++)
-	    if (!classes[i].maybeSubTypeOf(type))
+	    if (!classes[i].maybeSuperTypeOf(type))
 		return false;
 	return true;
     }
@@ -104,7 +104,7 @@ public class MultiClassType extends ReferenceType {
 	 */
 	int j;
 	for (j=0; j < classes.length; j++) {
-	    if (!bottomType.maybeSubTypeOf(classes[j]))
+	    if (!bottomType.maybeSuperTypeOf(classes[j]))
 		break;
 	}
 	    
@@ -118,7 +118,7 @@ public class MultiClassType extends ReferenceType {
 	    System.arraycopy(classes, 0, topClasses, 0, j);
 	    int count = j;
 	    for (j++; j < classes.length; j++) {
-		if (bottomType.isSubTypeOf(classes[j]))
+		if (bottomType.maybeSuperTypeOf(classes[j]))
 		    topClasses[count++] = classes[j];
 	    }
 	    
@@ -131,7 +131,7 @@ public class MultiClassType extends ReferenceType {
 	    }
 	    topType = create(topClasses);
 	}
-	if (topType.isSubTypeOf(bottomType))
+	if (topType.isSuperTypeOf(bottomType))
 	    /* This means that topType contains only classes that are also
 	     * in bottomType.  So topType is the whole range.
 	     */
@@ -139,9 +139,9 @@ public class MultiClassType extends ReferenceType {
 	return tRange(bottomType, topType);
     }
     
-    boolean containsSuperTypeOf(Type type) {
+    boolean containsSubTypeOf(Type type) {
 	for (int i = 0; i < classes.length; i++)
-	    if (type.isSubTypeOf(classes[i]))
+	    if (type.isSuperTypeOf(classes[i]))
 		return true;
 	return false;
     }
@@ -159,9 +159,9 @@ public class MultiClassType extends ReferenceType {
         /* Most times (almost always) one of the two types is
          * already more specialized.  Optimize for this case.  
 	 */
-	if (type.isSubTypeOf(this))
+	if (type.isSuperTypeOf(this))
 	    return this;
-	if (this.isSubTypeOf(type))
+	if (this.isSuperTypeOf(type))
 	    return type;
 
 	ClassType[] otherClasses;
@@ -180,7 +180,7 @@ public class MultiClassType extends ReferenceType {
     big_loop_this:
 	for (int i=0; i< classes.length; i++) {
 	    ClassType clazz = classes[i];
-	    if (!clazz.isSubTypeOf(type)) {
+	    if (!clazz.isSuperTypeOf(type)) {
 		/* This interface is not implemented by any of the other
 		 * classes.  Add it to the destClasses.
 		 */
@@ -190,7 +190,7 @@ public class MultiClassType extends ReferenceType {
     big_loop_other:
 	for (int i=0; i< otherClasses.length; i++) {
 	    ClassType clazz = otherClasses[i];
-	    if (!clazz.isSubTypeOf(this)) {
+	    if (!clazz.isSuperTypeOf(this)) {
 		/* This interface is not implemented by any of the other
 		 * classes.  Add it to the destClasses.
 		 */
@@ -217,9 +217,9 @@ public class MultiClassType extends ReferenceType {
         /* Often one of the two classes is already more generalized.
          * Optimize for this case.  
 	 */
-	if (type.isSubTypeOf(this))
+	if (type.isSuperTypeOf(this))
 	    return type;
-	if (this.isSubTypeOf(type))
+	if (this.isSuperTypeOf(type))
 	    return this;
 
 	if (!(type instanceof ReferenceType))

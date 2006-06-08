@@ -98,7 +98,8 @@ public class IfThenElseOperator extends Operator {
 			ClassPath cp = field.getClassAnalyzer().getClassPath();
 			if (field.setClassConstant(clazz))
 			    return new ClassFieldOperator
-				(clazz.charAt(0) == '[' 
+				(invoke.getType(),
+				 clazz.charAt(0) == '[' 
 				 ? Type.tType(cp, clazz)
 				 : Type.tClass(cp, clazz));
 		    }

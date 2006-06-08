@@ -50,7 +50,7 @@ public class HierarchyTreeModel implements TreeModel, Runnable {
     TreeElement root = new TreeElement("");
     Set listeners = new HashSet();
     JProgressBar progressBar;
-    Main main;
+    ClassPath classPath;
 
     class TreeElement implements Comparable {
 	String fullName;
@@ -112,7 +112,7 @@ public class HierarchyTreeModel implements TreeModel, Runnable {
 
 	if (!clazz.isInterface()) {
 	    ClassInfo superClazz = clazz.getSuperclass();
-	    handleClass(classes, superClazz).addChild(elem);
+  	    handleClass(classes, superClazz).addChild(elem);
 	}
 	ClassInfo[] ifaces = clazz.getInterfaces();
 	for (int i=0; i < ifaces.length; i++)
@@ -124,7 +124,6 @@ public class HierarchyTreeModel implements TreeModel, Runnable {
 
     public int readPackage(int depth, HashMap classes, String packageName, 
 			   int count) {
-	ClassPath classPath = main.getClassPath();
 	if (depth++ >= MAX_PACKAGE_LEVEL)
 	    return count;
 	String prefix = packageName.length() == 0 ? "" : packageName + ".";
@@ -148,7 +147,6 @@ public class HierarchyTreeModel implements TreeModel, Runnable {
     }
 
     public int countClasses(int depth, String packageName) {
-	ClassPath classPath = main.getClassPath();
 	if (depth++ >= MAX_PACKAGE_LEVEL)
 	    return 0;
 	int number = 0;
@@ -167,19 +165,20 @@ public class HierarchyTreeModel implements TreeModel, Runnable {
 	return number;
     }
 
-    public HierarchyTreeModel(Main main) {
-	this.main = main;
+    public HierarchyTreeModel(ClassPath classPath) {
 	this.progressBar = null;
-	rebuild();
+	setClassPath(classPath);
     }
 
-    public HierarchyTreeModel(Main main, JProgressBar progressBar) {
-	this.main = main;
+    public HierarchyTreeModel(ClassPath classPath, 
+			      JProgressBar progressBar) {
 	this.progressBar = progressBar;
-	rebuild();
+	setClassPath(classPath);
     }
 
-    public void rebuild() {
+    public void setClassPath(ClassPath classPath) {
+	this.classPath = classPath;
+
 	Thread t = new Thread(this);
 	t.setPriority(Thread.MIN_PRIORITY);
 	t.start();
@@ -200,8 +199,6 @@ public class HierarchyTreeModel implements TreeModel, Runnable {
 	TreeModelEvent ev = new TreeModelEvent(this, new Object[] { root });
 	for (int i=0; i< ls.length; i++)
 	    ls[i].treeStructureChanged(ev);
-
-	main.reselect();
     }
 
     public void addTreeModelListener(TreeModelListener l) {
@@ -253,9 +250,14 @@ public class HierarchyTreeModel implements TreeModel, Runnable {
 	if (fullName == null || fullName.length() == 0)
 	    return new TreePath(root);
 
-	int length = 2;
-	ClassInfo ci = main.getClassPath().getClassInfo(fullName);
-	while (ci.getSuperclass() != null) {
+	int length = 1;
+	ClassInfo ci = classPath.getClassInfo(fullName);
+	while (ci != null) {
+	    try {
+		ci.load(ClassInfo.HIERARCHY);
+	    } catch (IOException ex) {
+		ci.guess(ClassInfo.HIERARCHY);
+	    }
 	    length++;
 	    ci = ci.getSuperclass();
 	}
@@ -265,7 +267,7 @@ public class HierarchyTreeModel implements TreeModel, Runnable {
 	int nr = 0;
     next_component:
 	while (nr < length-1) {
-	    ci = main.getClassPath().getClassInfo(fullName);
+	    ci = classPath.getClassInfo(fullName);
 	    for (int i=2; i < length - nr; i++)
 		ci = ci.getSuperclass();
 	    Iterator iter = path[nr].getChilds().iterator();

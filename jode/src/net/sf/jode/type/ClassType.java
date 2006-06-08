@@ -23,21 +23,54 @@ import java.util.Hashtable;
 import java.util.Enumeration;
 import java.io.IOException;
 
+///#def COLLECTIONS java.util
+import java.util.Collections;
+import java.util.Map;
+///#enddef
+
 /**
  * This class is the base class of all types representing a class type.<p>
  *
  * @author Jochen Hoenicke 
  */
 public abstract class ClassType extends ReferenceType {
+    /**
+     * The full qualified class name in java syntax.
+     */
     protected String className;
+    protected String[] genericNames;
+    protected Type[]   genericInstances;
+
+    /*
+     * @invariant (genericNames == null) == (genericInstances == null)
+     * @invariant (genericNames != null) ==> 
+     *                (genericNames.length == genericInstances.length)
+     */
 
     public String getClassName() {
 	return className;
     }
 
+    public Type getGeneric(String name) {
+	if (genericNames != null) {
+	    for (int i = 0; i < genericNames.length; i++)
+		if (genericNames[i].equals(name))
+		    return genericInstances[i];
+	}
+	return null;
+    }
+
     public ClassType(int typecode, String clazzName) {
 	super(typecode);
 	className = clazzName;
+    }
+
+    public ClassType(int typecode, String clazzName, 
+		     String[] genNames, Type[] genTypes) {
+	super(typecode);
+	className = clazzName;
+	genericNames = genNames;
+	genericTypes = genTypes;
     }
 
     /**
@@ -75,11 +108,15 @@ public abstract class ClassType extends ReferenceType {
      */
     public abstract ClassType[] getInterfaces();
 
-    public boolean isSubTypeOf(Type type) {
+    /**
+     * Returns true, if all types in this type set are a super type of
+     * at least one type in the type set given as parameter.
+     */
+    public boolean isSuperTypeOf(Type type) {
 	if (type == tNull)
 	    return true;
 	if (type instanceof MultiClassType)
-	    return ((MultiClassType)type).containsSuperTypeOf(this);
+	    return ((MultiClassType)type).containsSubTypeOf(this);
 	if (!(type instanceof ClassType))
 	    return false;
 	if (this.equals(tObject))
@@ -97,7 +134,7 @@ public abstract class ClassType extends ReferenceType {
 	    if (isInterface()) {
 		ClassType[] typeIfaces = ctype.getInterfaces();
 		for (int i = 0; i < typeIfaces.length; i++)
-		    if (isSubTypeOf(typeIfaces[i]))
+		    if (isSuperTypeOf(typeIfaces[i]))
 			return true;
 	    }
 	    ctype = ctype.getSuperClass();
@@ -105,11 +142,7 @@ public abstract class ClassType extends ReferenceType {
 	return false;
     }
 
-    public boolean maybeSubTypeOf(Type type) {
-	if (type == tNull)
-	    return true;
-	if (!(type instanceof ClassType))
-	    return false;
+    public boolean maybeSuperTypeOf(ClassType type) {
 	if (this.equals(tObject))
 	    return true;
 	
@@ -128,7 +161,7 @@ public abstract class ClassType extends ReferenceType {
 	    if (isInterface()) {
 		ClassType[] typeIfaces = ctype.getInterfaces();
 		for (int i = 0; i < typeIfaces.length; i++)
-		    if (isSubTypeOf(typeIfaces[i]))
+		    if (isSuperTypeOf(typeIfaces[i]))
 			return true;
 	    }
 	    ctype = ctype.getSuperClass();
@@ -150,18 +183,17 @@ public abstract class ClassType extends ReferenceType {
 
     /**
      * Create the type corresponding to the range from bottomType to
-     * this.  Checks if the given type range may be not empty.  This
-     * means, that bottom.clazz is extended by this.clazz and that all
-     * interfaces in bottom are implemented by an interface or by
-     * clazz.
+     * this.  Checks if the given type range is not empty.  This
+     * means, that this extends bottom.clazz and implements all
+     * interfaces in bottom.
      * @param bottom the start point of the range
      * @return the range type, or tError if range is empty.  
      */
     public Type createRangeType(ReferenceType bottomType) {
-	if (!bottomType.maybeSubTypeOf(this))
+	if (!bottomType.maybeSuperTypeOf(this))
 	    return tError;
 
-	if (this.isSubTypeOf(bottomType))
+	if (this.isSuperTypeOf(bottomType))
 	    /* bottomType contains a class equal to this.
 	     */
 	    return this;
@@ -182,9 +214,9 @@ public abstract class ClassType extends ReferenceType {
         /* Most times (almost always) one of the two classes is
          * already more specialized.  Optimize for this case.  
 	 */
-	if (type.isSubTypeOf(this))
+	if (type.isSuperTypeOf(this))
 	    return this;
-	if (this.isSubTypeOf(type))
+	if (this.isSuperTypeOf(type))
 	    return type;
 
 	if (type instanceof MultiClassType)
@@ -197,11 +229,11 @@ public abstract class ClassType extends ReferenceType {
     }
 
     /**
-     * Returns the generalized type of this and type.  We have two
-     * classes and multiple interfaces.  The result should be the
-     * object that is the the super class of both objects and all
-     * interfaces, that one class or interface of each type 
-     * implements.  
+     * Returns the generalized type of this and type, i.e. the common
+     * super type.  The result should be the collection of classes and
+     * interfaces that are super class resp. super interfaces of both
+     * objects.  We don't include their super classes and super interfaces
+     * though.
      */
     public Type getGeneralizedType(Type type) {
         int code = type.typecode;
@@ -215,9 +247,9 @@ public abstract class ClassType extends ReferenceType {
         /* Often one of the two classes is already more generalized.
          * Optimize for this case.  
 	 */
-	if (type.isSubTypeOf(this))
+	if (type.isSuperTypeOf(this))
 	    return type;
-	if (this.isSubTypeOf(type))
+	if (this.isSuperTypeOf(type))
 	    return this;
 
 	if (!(type instanceof ReferenceType))
@@ -229,7 +261,7 @@ public abstract class ClassType extends ReferenceType {
     }
 
     public String getTypeSignature() {
-	return "L" + className + ";";
+	return "L" + className.replace('.', '/') + ";";
     }
 
     public Class getTypeClass() throws ClassNotFoundException {
@@ -238,7 +270,15 @@ public abstract class ClassType extends ReferenceType {
 
     public String toString()
     {
-	return className;	
+	if (genInstances == null)
+	    return className;
+	StringBuffer sb = new StringBuffer(className).append('<');
+	String comma = "";
+	for (int i = 0; i < genInstances.length; i++) {
+	    sb.append(comma).append(genInstances[i].toString());
+	}
+	sb.append('>');
+	return sb.toString();
     }
 
     /**
@@ -252,7 +292,7 @@ public abstract class ClassType extends ReferenceType {
 		&& ((RangeType)fromType).getBottom() == tNull))
 	    return null;
 	Type hint = fromType.getHint();
-	if (hint.isSubTypeOf(this)
+	if (hint.isSuperTypeOf(this)
 	    || (hint instanceof ClassType
 		&& ((ClassType) hint).isInterface()))
 	    return null;
@@ -274,6 +314,10 @@ public abstract class ClassType extends ReferenceType {
      */
     public boolean isClassType() {
         return true;
+    }
+
+    public boolean containsClass(String clazzName) {
+	return clazzName.equals(className);
     }
 
     private final static Hashtable keywords = new Hashtable();

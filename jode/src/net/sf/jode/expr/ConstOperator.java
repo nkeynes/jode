@@ -18,6 +18,7 @@
  */
 
 package net.sf.jode.expr;
+import net.sf.jode.bytecode.ClassPath;
 import net.sf.jode.type.Type;
 import net.sf.jode.type.IntegerType;
 import net.sf.jode.util.StringQuoter;
@@ -31,6 +32,11 @@ public class ConstOperator extends NoArgOperator {
 	= new IntegerType(IntegerType.IT_I | IntegerType.IT_C 
 			  | IntegerType.IT_Z
 			  | IntegerType.IT_S | IntegerType.IT_B);
+
+    public ConstOperator(ClassPath cp, String constant) {
+	super(Type.tClass(cp, "java.lang.String"));
+	value = constant;
+    }
 
     public ConstOperator(Object constant) {
 	super(Type.tUnknown);
@@ -60,8 +66,6 @@ public class ConstOperator extends NoArgOperator {
 	    updateParentType(Type.tFloat);
 	else if (constant instanceof Double)
 	    updateParentType(Type.tDouble);
-	else if (constant instanceof String)
-	    updateParentType(Type.tString);
 	else if (constant == null)
 	    updateParentType(Type.tUObject);
 	else
@@ -129,7 +133,7 @@ public class ConstOperator extends NoArgOperator {
 	if (type.getHint().equals(Type.tChar)) {
             char c = (char) ((Integer) value).intValue();
 	    return StringQuoter.quote(c);
-	} else if (type.equals(Type.tString)) {
+	} else if (value instanceof String) {
 	    return StringQuoter.quote(strVal);
         } else if (parent != null) {
             int opindex = parent.getOperatorIndex();

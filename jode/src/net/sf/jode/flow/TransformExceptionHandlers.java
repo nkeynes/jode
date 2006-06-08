@@ -584,7 +584,7 @@ public class TransformExceptionHandlers {
 	 *   |- monitorexit local_x                                  |
 	 *   `  jump after this block (without jsr monexit)          |
 	 *                                                           |
-	 *  catchBlock:                                               |
+	 *  catchBlock:                                              |
 	 *      local_n = stack                                      |
 	 *      monitorexit local_x                                  |
 	 *      throw local_n                                        |
@@ -599,7 +599,7 @@ public class TransformExceptionHandlers {
 
 	/* Merge try and catch flow blocks.  No need to insert the
 	 * catchFlow.block into the try flow though, since all its
-	 * instruction are synthetic.
+	 * instructions are synthetic.
 	 */
 	mergeTryCatch(tryFlow, catchFlow);
 	

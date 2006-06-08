@@ -1,4 +1,4 @@
-/* Type Copyright (C) 1998-2002 Jochen Hoenicke.
+/* Type Copyright (C) 1998-2005 Jochen Hoenicke.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -21,10 +21,14 @@ package net.sf.jode.type;
 import net.sf.jode.GlobalOptions;
 import net.sf.jode.bytecode.ClassPath;
 import net.sf.jode.bytecode.ClassInfo;
+import net.sf.jode.bytecode.TypeSignature;
 import net.sf.jode.util.UnifyHash;
 
 ///#def COLLECTIONS java.util
+import java.util.Collections;
+import java.util.Map;
 import java.util.Iterator;
+import java.util.Arrays;
 ///#enddef
 
 /**
@@ -56,6 +60,7 @@ public class Type {
     public static final int TC_INTEGER = 107;
     public static final int TC_SYSCLASS = 108;
     public static final int TC_CLASSIFACE = 109;
+    public static final int TC_PARAMETER = 110;
 
     private static final UnifyHash classHash = new UnifyHash();
     private static final UnifyHash arrayHash = new UnifyHash();    
@@ -158,71 +163,56 @@ public class Type {
      * <code>java.lang.Comparable</code>.
      */
     public static final SystemClassType tSerializable = 
-	tSystemClass("java.io.Serializable", 
+	tSystemClass("java.io.Serializable",
 		     null, EMPTY_IFACES, false, true);
     /**
      * This type represents the singleton set containing 
      * <code>java.lang.Comparable</code>.
      */
     public static final SystemClassType tCloneable =
-	tSystemClass("java.lang.Cloneable", 
+	tSystemClass("java.lang.Cloneable",
 		     null, EMPTY_IFACES, false, true);
-    /**
-     * This type represents the singleton set containing 
-     * <code>java.lang.Comparable</code>.
-     */
-    public static final SystemClassType tComparable =
-	tSystemClass("java.lang.Comparable", 
-		     null, EMPTY_IFACES, false, true);
-
-    /**
-     * This type represents the singleton set containing 
-     * <code>java.lang.String</code>.
-     */
-    public static final SystemClassType tString =
-	tSystemClass("java.lang.String", 
-		     tObject, 
-		     new ClassType[] { tSerializable, tComparable },
-		     true, false);
-    /**
-     * This type represents the singleton set containing 
-     * <code>java.lang.StringBuffer</code>.
-     */
-    public static final SystemClassType tStringBuffer =
-	tSystemClass("java.lang.StringBuffer", 
-		     tObject, new ClassType[] { tSerializable },
-		     true, false);
-    /**
-     * This type represents the singleton set containing 
-     * <code>java.lang.StringBuffer</code>.
-     */
-    public static final SystemClassType tStringBuilder =
-	tSystemClass("java.lang.StringBuilder", 
-		     tObject, new ClassType[] { tSerializable },
-		     true, false);
-    /**
-     * This type represents the singleton set containing 
-     * <code>java.lang.Class</code>.
-     */
-    public static final SystemClassType tJavaLangClass =
-	tSystemClass("java.lang.Class", 
-		     tObject, new ClassType[] { tSerializable },
-		     true, false);
 
     static final ClassType[] arrayIfaces = {
 	tCloneable, tSerializable
     };
 
     /**
+     * This type represents the singleton set containing 
+     * <code>java.lang.String</code>.
+     */
+    /*FIXME */
+    public static final ClassType tString = 
+    tClass(new ClassPath("reflection:"), "java/lang/String");
+    public static final ClassType tStringBuffer = 
+    tClass(new ClassPath("reflection:"), "java/lang/StringBuffer");
+    public static final ClassType tStringBuilder = 
+    tClass(new ClassPath("reflection:"), "java/lang/StringBuilder");
+
+    /**
      * Generate the singleton set of the type represented by the given
      * string.
+     * @param classpath the current classpath.
      * @param type the type signature (or method signature).  
      * @return a singleton set containing the given type.
      */
     public static final Type tType(ClassPath cp, String type) {
-        if (type == null || type.length() == 0)
+	return tType(cp, type, Collections.EMPTY_MAP);
+    }
+
+    /**
+     * Generate the singleton set of the type represented by the given
+     * string.
+     * @param classpath the current classpath.
+     * @param signature the type signature (or method signature).  
+     * @param parameterMap the map from type variables to real types.
+     * @return a singleton set containing the given type.
+     */
+    public static final Type tType(ClassPath cp, String signature, 
+				   Map parameterMap) {
+        if (signature == null || signature.length() == 0)
             return tError;
-        switch(type.charAt(0)) {
+        switch(signature.charAt(0)) {
         case 'Z':
             return tBoolean;
         case 'B':
@@ -242,28 +232,68 @@ public class Type {
         case 'V':
             return tVoid;
         case '[':
-            return tArray(tType(cp, type.substring(1)));
-        case 'L':
-            int index = type.indexOf(';');
-            if (index != type.length()-1)
+            return tArray(tType(cp, signature.substring(1)));
+	case 'L': {
+            int endIndex = signature.length()-1;
+	    Type[] generics = null;
+            if (signature.charAt(endIndex) != ';')
                 return tError;
-            return tClass(cp, type.substring(1, index));
-	case '(':
-	    return tMethod(cp, type);
+	    if (signature.charAt(endIndex-1) == '>') {
+		/* parse parameter types */
+		int index = signature.indexOf('<');
+		String[] genericNames = TypeSignature
+		    .getArgumentTypes(signature.substring(index, endIndex));
+		endIndex = index;
+		generics = new Type[genericNames.length];
+		for (int i = 0; i < generics.length; i++) {
+		    String name = genericNames[i];
+		    char c = name.charAt(0);
+		    if (c == '*')
+			generics[i] = Type.tUObject;
+		    else if (c == '+')
+			generics[i] = Type.tType(cp, name.substring(1))
+			    .getSubType();
+		    else if (c == '-')
+			generics[i] = Type.tType(cp, name.substring(1))
+			    .getSuperType();
+		    else
+			generics[i] = Type.tType(cp, name);
+		} 
+	    }
+            return tClass(cp, signature.substring(1, endIndex), generics);
+	}
+	case 'T': {
+            int index = signature.indexOf(';');
+            if (index != signature.length()-1)
+                return tError;
+	    Type type = (Type) parameterMap.get(signature.substring(1, index));
+	    if (type == null)
+		return tError;
+	    return type;
+	}
         }
-        throw new InternalError("Unknown type signature: "+type);
+        throw new InternalError("Unknown type signature: "+signature);
     }
 
     /**
      * Generate the singleton set of the type represented by the given
      * class name.
-     * @param clazzname the full qualified name of the class. 
+     * @param className the full qualified name of the class. 
      * The packages may be separated by `.' or `/'.
      * @return a singleton set containing the given type.
      */
     public static final ClassType tClass(ClassPath classPath,
-					 String clazzname) {
-	return tClass(classPath.getClassInfo(clazzname.replace('/','.')));
+					 String className, 
+					 Type[] generics) {
+	return tClass(classPath.getClassInfo(className.replace('/','.')),
+		      generics);
+    }
+    /**
+     * @deprecated
+     */
+    public static final ClassType tClass(ClassPath classPath,
+					 String className){
+	return tClass(classPath, className, null);
     }
 
     /**
@@ -286,17 +316,34 @@ public class Type {
      * @param clazzinfo the net.sf.jode.bytecode.ClassInfo.
      * @return a singleton set containing the given type.
      */
-    public static final ClassType tClass(ClassInfo clazzinfo) {
+    public static final ClassType tClass(ClassInfo clazzinfo, 
+					 Type[] generics) {
 	int hash = clazzinfo.hashCode();
+	if (generics != null) {
+	    for (int i = 0; i < generics.length; i++)
+		hash = hash * 11 + generics[i].hashCode();
+	}
 	Iterator iter = classHash.iterateHashCode(hash);
 	while (iter.hasNext()) {
 	    ClassInfoType type = (ClassInfoType) iter.next();
-	    if (type.getClassInfo() == clazzinfo)
+	    if (type.getClassInfo() == clazzinfo
+		&& Arrays.equals(generics, type.genInstances))
 		return type;
 	}
-	ClassInfoType type = new ClassInfoType(clazzinfo);
+	ClassInfoType type = new ClassInfoType(clazzinfo, generics);
 	classHash.put(hash, type);
         return type;
+    }
+
+    /**
+     * Generate the singleton set of the type represented by the given
+     * class info.
+     * @param clazzinfo the net.sf.jode.bytecode.ClassInfo.
+     * @return a singleton set containing the given type.
+     * deprecated This should be removed if generics work.
+     */
+    public static final ClassType tClass(ClassInfo clazzinfo) {
+	return tClass(clazzinfo, null);
     }
 
     /**
@@ -378,10 +425,8 @@ public class Type {
      * <li>tSubType(tError) = tError </li>
      * <li>type.intersection(tSubType(type)).equals(type)
      *  (this means type is a subset of tSubType(type).</li>
-     * <li>tSuperType(tSubType(type)) is a subset of type </li>
-     * <li>tSubType(tSuperType(type)) is a subset of type </li>
      * <li>tSubType(tNull) = tNull</li>
-     * <li>tSubType(tBoolean, tShort) = { tBoolean, tByte, tShort }</li></ul>
+     * <li>tSubType({tBoolean, tShort}) = { tBoolean, tByte, tShort }</li></ul>
      * @param type a set of types.
      * @return the sub types of type.  
      */
@@ -469,17 +514,20 @@ public class Type {
     }
 
     /**
-     * Returns true, if this is a sub type of type.
+     * Returns true, if all types in this type set are a super type of
+     * at least one type in the type set given as parameter.
      */
-    public boolean isSubTypeOf(Type type) {
+    public boolean isSuperTypeOf(Type type) {
 	return this == type;
     }
 
     /**
-     * Returns true, if this is a sub type of type.
+     * Returns true, if all types in this type are possibly super
+     * types of the given type.  If we don't have the full hierarchy
+     * of this type, assume it is.
      */
-    public boolean maybeSubTypeOf(Type type) {
-	return isSubTypeOf(type);
+    public boolean maybeSuperTypeOf(ClassType type) {
+	return isSuperTypeOf(type);
     }
 
     /**
@@ -537,6 +585,15 @@ public class Type {
      */
     public boolean isOfType(Type type) {
 	return this.intersection(type) != Type.tError;
+    }
+
+    /**
+     * Check if this type set contains the given class.
+     * @param clazz the class to check.
+     * @return true if clazz is contained in this type.
+     */
+    public boolean containsClass(ClassInfo clazz) {
+	return false;
     }
 
     /**

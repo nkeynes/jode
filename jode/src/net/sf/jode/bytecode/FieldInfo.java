@@ -146,6 +146,10 @@ public final class FieldInfo extends BinaryInfo implements Comparable {
 	    gcp.putUTF8("Synthetic");
 	if (deprecatedFlag)
 	    gcp.putUTF8("Deprecated");
+	if (signature != null) {
+	    gcp.putUTF8("Signature");
+	    gcp.putUTF8(signature);
+	}
 	prepareAttributes(gcp);
     }
 
@@ -182,6 +186,11 @@ public final class FieldInfo extends BinaryInfo implements Comparable {
 	if (deprecatedFlag) {
 	    output.writeShort(gcp.putUTF8("Deprecated"));
 	    output.writeInt(0);
+	}
+	if (signature != null) {
+	    output.writeShort(gcp.putUTF8("Signature"));
+	    output.writeInt(2);
+	    output.writeShort(gcp.putUTF8(signature));
 	}
     }
 
@@ -325,7 +334,7 @@ public final class FieldInfo extends BinaryInfo implements Comparable {
 
     public String toString() {
         return "Field "+Modifier.toString(modifier)+" "+
-            typeSig+" "+name;
+            getSignature()+" "+name;
     }
 }
 

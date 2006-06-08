@@ -26,7 +26,7 @@ import java.util.Vector;
 import java.util.Enumeration;
 
 /**
- * This is an abstrace super class of all reference types.  Reference
+ * This is an abstract super class of all reference types.  Reference
  * types are NullType, MultiClassType, and ClassType with its sub types
  * ClassInfoType, SystemClassType, and ArrayType. <p>
  *
@@ -87,13 +87,13 @@ public abstract class ReferenceType extends Type {
 
 	    for (Enumeration enumeration = classes.elements(); 
 		 enumeration.hasMoreElements(); ) {
-		if (type.isSubTypeOf((Type) enumeration.nextElement()))
+		if (type.isSuperTypeOf((Type) enumeration.nextElement()))
 		    /* We can skip this, as another class already
 		     * implies it.  */
 		    continue type_loop;
 	    }
 	    
-            if (type.isSubTypeOf(this)) {
+            if (type.isSuperTypeOf(this)) {
 		classes.addElement(type);
                 continue type_loop;
             }
@@ -161,6 +161,15 @@ public abstract class ReferenceType extends Type {
 	    /* Class Hierarchy can't be fully gotten. */
 	    return false;
 	}
+    }
+
+    /**
+     * Returns true, if all types in this type are possibly super
+     * types of the given type.  If we don't have the full hierarchy
+     * of this type, assume it is.
+     */
+    public boolean maybeSuperTypeOf(ClassType type) {
+	return false;
     }
 
     public Type getSuperType() {

@@ -48,13 +48,6 @@ public class StringAddOperator extends Operator {
     public void dumpExpression(TabbedPrintWriter writer)
 	throws java.io.IOException {
 
-	if (!subExpressions[0].getType().isOfType(Type.tString)
-	    && !subExpressions[1].getType().isOfType(Type.tString)) {
-	    writer.print("\"\"");
-	    writer.breakOp();
-	    writer.print(getOperatorString());
-	}
-
 	subExpressions[0].dumpExpression(writer, 610);
 	writer.breakOp();
 	writer.print(getOperatorString());
