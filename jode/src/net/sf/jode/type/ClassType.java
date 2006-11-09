@@ -18,15 +18,8 @@
  */
 
 package net.sf.jode.type;
-import java.util.Stack;
 import java.util.Hashtable;
-import java.util.Enumeration;
-import java.io.IOException;
-
-///#def COLLECTIONS java.util
-import java.util.Collections;
-import java.util.Map;
-///#enddef
+import java.util.Stack;
 
 /**
  * This class is the base class of all types representing a class type.<p>
@@ -70,7 +63,7 @@ public abstract class ClassType extends ReferenceType {
 	super(typecode);
 	className = clazzName;
 	genericNames = genNames;
-	genericTypes = genTypes;
+	genericInstances = genTypes;
     }
 
     /**
@@ -208,7 +201,7 @@ public abstract class ClassType extends ReferenceType {
      */
     public Type getSpecializedType(Type type) {
 	if (type instanceof RangeType) {
-	    type = ((RangeType) type).getBottom();
+	    type = ((RangeType) type).getTop();
 	}
 
         /* Most times (almost always) one of the two classes is
@@ -238,7 +231,7 @@ public abstract class ClassType extends ReferenceType {
     public Type getGeneralizedType(Type type) {
         int code = type.typecode;
 	if (code == TC_RANGE) {
-	    type = ((RangeType) type).getTop();
+	    type = ((RangeType) type).getBottom();
 	    code = type.typecode;
 	}
         if (code == TC_NULL)
@@ -270,12 +263,12 @@ public abstract class ClassType extends ReferenceType {
 
     public String toString()
     {
-	if (genInstances == null)
+	if (genericInstances == null)
 	    return className;
 	StringBuffer sb = new StringBuffer(className).append('<');
 	String comma = "";
-	for (int i = 0; i < genInstances.length; i++) {
-	    sb.append(comma).append(genInstances[i].toString());
+	for (int i = 0; i < genericInstances.length; i++) {
+	    sb.append(comma).append(genericInstances[i].toString());
 	}
 	sb.append('>');
 	return sb.toString();
@@ -289,7 +282,7 @@ public abstract class ClassType extends ReferenceType {
     public Type getCastHelper(Type fromType) {
 	if (isInterface() || fromType == tNull
 	    || (fromType instanceof RangeType
-		&& ((RangeType)fromType).getBottom() == tNull))
+		&& ((RangeType)fromType).getTop() == tNull))
 	    return null;
 	Type hint = fromType.getHint();
 	if (hint.isSuperTypeOf(this)

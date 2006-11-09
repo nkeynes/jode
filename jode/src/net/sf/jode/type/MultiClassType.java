@@ -154,7 +154,7 @@ public class MultiClassType extends ReferenceType {
      */
     public Type getSpecializedType(Type type) {
 	if (type instanceof RangeType)
-	    type = ((RangeType) type).getBottom();
+	    type = ((RangeType) type).getTop();
 
         /* Most times (almost always) one of the two types is
          * already more specialized.  Optimize for this case.  
@@ -212,7 +212,7 @@ public class MultiClassType extends ReferenceType {
      */
     public Type getGeneralizedType(Type type) {
 	if (type instanceof RangeType)
-	    type = ((RangeType) type).getTop();
+	    type = ((RangeType) type).getBottom();
 
         /* Often one of the two classes is already more generalized.
          * Optimize for this case.  

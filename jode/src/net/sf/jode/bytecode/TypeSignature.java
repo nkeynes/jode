@@ -18,7 +18,6 @@
  */
 
 package net.sf.jode.bytecode;
-import net.sf.jode.util.UnifyHash;
 ///#def COLLECTIONS java.util
 import java.util.Map;
 ///#enddef
@@ -342,6 +341,49 @@ public class TypeSignature {
      */
     public static String getReturnType(String methodTypeSig) {
 	return methodTypeSig.substring(methodTypeSig.lastIndexOf(')')+1);
+    }
+
+    /**
+     * Gets the names and types of the generic parameters of the given type signature.
+     * @param typeSig the type signature.
+     * @return an array containing all generic parameters together with their 
+     * type in correct order, or null if there aren't any generic parameters.
+     */
+    public static String[] getGenericSignatures(String typeSig) {
+	System.err.println(typeSig);
+	if (typeSig.charAt(0) != '<')
+	    return null;
+	int pos = 1;
+	int count = 0;
+	while (typeSig.charAt(pos) != '>') {
+	    while (typeSig.charAt(pos) != ':')
+		pos++;
+	    /* check for empty entry */
+	    if (typeSig.charAt(pos+1) == ':')
+		pos++;
+	    while (typeSig.charAt(pos) == ':') {
+		/* skip colon and type */
+		pos = skipType(typeSig, pos + 1);
+	    }
+	    count++;
+	}
+	String[] params = new String[count];
+	pos = 1;
+	count = 0;
+	while (typeSig.charAt(pos) != '>') {
+	    int spos = pos;
+	    while (typeSig.charAt(pos) != ':')
+		pos++;
+	    /* check for empty entry */
+	    if (typeSig.charAt(pos+1) == ':')
+		pos++;
+	    while (typeSig.charAt(pos) == ':') {
+		/* skip colon and type */
+		pos = skipType(typeSig, pos + 1);
+	    }
+	    params[count++] = typeSig.substring(spos, pos);
+	}
+	return params;
     }
 
     /**

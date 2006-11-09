@@ -20,6 +20,8 @@
 package net.sf.jode.type;
 import net.sf.jode.bytecode.ClassInfo;
 import net.sf.jode.bytecode.TypeSignature;
+import net.sf.jode.util.SimpleMap;
+import net.sf.jode.util.SimpleSet;
 import net.sf.jode.GlobalOptions;
 
 import java.lang.reflect.Modifier;
@@ -30,6 +32,7 @@ import java.util.Hashtable;
 
 ///#def COLLECTIONS java.util
 import java.util.Map;
+import java.util.Set;
 ///#enddef
 
 /**
@@ -68,22 +71,24 @@ public class ClassInfoType extends ClassType {
 	    return;
 	}
 
-	genInstances = generics;
+	genericInstances = generics;
+	Map genericMap = new SimpleMap();
 	if (generics != null) {
 	    /* parse generic names */
 	    String[] genNames;
-	    if (signature.charAt(0) == '<')
-		genNames = TypeSignature.getGenericNames(signature);
-	
-	    if (genNames == null)
+	    if (signature.charAt(0) != '<')
 		throw new IllegalArgumentException
 		    ("Generic parameters for non-generic class");
+	    
+	    genNames = TypeSignature.getGenericNames(signature);
 	    if (generics.length != genNames.length)
 		throw new IllegalArgumentException
 		    ("Wrong number of generic parameters");
+	    for (int i = 0; i < generics.length; i++)
+		genericMap.put(genNames[i], generics[i].getTypeSignature());
 	}
 
-	signature = TypeSignature.mapGenerics(signature, getGenerics());
+	signature = TypeSignature.mapGenerics(signature, genericMap); 
     }
 
     public boolean isUnknown() {

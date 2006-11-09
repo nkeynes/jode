@@ -24,7 +24,8 @@ import java.awt.Graphics;
 import java.awt.Insets;
 
 public class Applet extends java.applet.Applet {
-    private final int BORDER = 10;
+	private static final long serialVersionUID = -132941289170424862L;
+	private final int BORDER = 10;
     private final int BEVEL = 2;
     private Window jodeWin = new Window(this);
     private Insets myInsets;

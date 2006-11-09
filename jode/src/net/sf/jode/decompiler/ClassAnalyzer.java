@@ -21,11 +21,14 @@ package net.sf.jode.decompiler;
 import net.sf.jode.GlobalOptions;
 import net.sf.jode.type.MethodType;
 import net.sf.jode.type.Type;
+import net.sf.jode.type.GenericParameterType;
+import net.sf.jode.type.ClassType;
 import net.sf.jode.bytecode.ClassFormatException;
 import net.sf.jode.bytecode.ClassInfo;
 import net.sf.jode.bytecode.ClassPath;
 import net.sf.jode.bytecode.FieldInfo;
 import net.sf.jode.bytecode.MethodInfo;
+import net.sf.jode.bytecode.TypeSignature;
 import net.sf.jode.expr.Expression;
 import net.sf.jode.expr.ThisOperator;
 import net.sf.jode.flow.TransformConstructors;
@@ -33,6 +36,8 @@ import net.sf.jode.flow.StructuredBlock;
 import net.sf.jode.util.SimpleSet;
 
 import java.lang.reflect.Modifier;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Vector;
 import java.util.Enumeration;
@@ -96,27 +101,29 @@ public class ClassAnalyzer
 	throws ClassFormatException, IOException
     {
 	clazz.load(ClassInfo.ALL);
-	String signatures = clazz.getSignature();
-	if (signatures.charAt(0) == '<') {
-	    String[] genericSignatures = signature.getGenericNames();
+	String signature = clazz.getSignature();
+	if (signature.charAt(0) == '<') {
+	    String[] genericSignatures = TypeSignature.getGenericSignatures(signature);
 	    generics = new String[genericSignatures.length];
+	    genericTypes = new Type[genericSignatures.length];
 	    for (int i = 0; i < generics.length; i++) {
-		int colon = genericSignatures[i].charAt(':');
+		int colon = genericSignatures[i].indexOf(':');
 		String genName;
 		if (colon == -1) {
 		    generics[i] = genericSignatures[i];
-		    genericType[i] = 
+		    genericTypes[i] = 
 			new GenericParameterType(genericSignatures[i],
 						 Type.tObject,
 						 new ClassType[0]);
 		} else {
 		    generics[i] = genericSignatures[i].substring(0, colon);
 		    String remainder = genericSignatures[i].substring(colon+1);
-		    int nextIndex = remainder.skipType(remainder, 0);
-		    List superClazzes;
+		    int nextIndex = TypeSignature.skipType(remainder, 0);
+		    List superClazzes = new ArrayList();
 		    for (;;) {
 			String clazzSig = remainder.substring(0, nextIndex);
-			superClazzes.add(Type.tType(clazzSig));
+			superClazzes.add(Type.tType(clazz.getClassPath(), 
+						    clazzSig));
 			if (nextIndex >= remainder.length())
 			    break;
 			remainder = remainder.substring(nextIndex+1);
@@ -128,9 +135,9 @@ public class ClassAnalyzer
 			genSupClass = Type.tObject;
 		    ClassType[] genSupIfaces = (ClassType[]) 
 			superClazzes.toArray(new ClassType[0]);
-		    genericType[i] = new GenericParameterType(generics[i],
-							      genSupClass,
-							      genSupIfaces);
+		    genericTypes[i] = new GenericParameterType(generics[i],
+							       genSupClass,
+							       genSupIfaces);
 		}
 	    }
 	}

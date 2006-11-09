@@ -55,7 +55,7 @@ public class NullType extends ReferenceType {
      */
     public Type getGeneralizedType(Type type) {
 	if (type.typecode == TC_RANGE)
-	    type = ((RangeType) type).getTop();
+	    type = ((RangeType) type).getBottom();
 	if (type instanceof ReferenceType)
 	    return type;
 	return tError;
@@ -69,7 +69,7 @@ public class NullType extends ReferenceType {
      */
     public Type getSpecializedType(Type type) {
 	if (type.typecode == TC_RANGE)
-	    type = ((RangeType) type).getBottom();
+	    type = ((RangeType) type).getTop();
 	if (type != tNull)
 	    return tError;
 	return tNull;

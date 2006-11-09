@@ -32,8 +32,6 @@ import javax.swing.tree.*;
 import java.awt.*;
 import java.awt.event.*;
 import java.io.*;
-import java.util.StringTokenizer;
-import java.util.ResourceBundle;
 import java.util.*;
 
 public class Main 
@@ -147,8 +145,9 @@ public class Main
 	rightPane.setDividerSize(4);
 	allPane.setDividerLocation(200);
 	allPane.setDividerSize(4);
-	decompiler.setErr(new PrintWriter
-	    (new BufferedWriter(new AreaWriter(errorArea)), true));
+	decompiler.setErr(new PrintWriter(System.err)); 
+	//new PrintWriter
+	  //  (new BufferedWriter(new AreaWriter(errorArea)), true));
     }
 
     public synchronized void valueChanged(TreeSelectionEvent e) {
@@ -250,16 +249,19 @@ public class Main
 	    };
 	try {
 	    decompiler.decompile(lastClassName, writer, progListener);
-	} catch (Throwable t) {
-	    try {
-		writer.write(bundle.getString("main.exception"));
-		PrintWriter pw = new PrintWriter(writer);
-		t.printStackTrace(pw);
-		pw.flush();
-	    } catch (IOException ex) {
-		/* Shouldn't happen, complain to stderr */
-		ex.printStackTrace();
-	    }
+//	} catch (Throwable t) {
+//	    try {
+//		writer.write(bundle.getString("main.exception"));
+//		PrintWriter pw = new PrintWriter(writer);
+//		t.printStackTrace(pw);
+//		pw.flush();
+//	    } catch (IOException ex) {
+//		/* Shouldn't happen, complain to stderr */
+//		ex.printStackTrace();
+//	    }
+	} catch (IOException e) {
+	    // TODO Auto-generated catch block
+	    throw (RuntimeException) new RuntimeException().initCause(e);
 	} finally {
 	    try {
 		writer.close();
