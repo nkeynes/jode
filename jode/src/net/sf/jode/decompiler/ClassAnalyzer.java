@@ -53,10 +53,11 @@ public class ClassAnalyzer
 {
     ImportHandler imports;
     ClassInfo clazz;
+    ClassType myType;
     ClassDeclarer parent;
     ProgressListener progressListener;
     String[] generics;
-    Type[]   genericTypes;
+    GenericParameterType[] genericTypes;
 
     /**
      * The complexity for initi#alizing a class.
@@ -105,7 +106,7 @@ public class ClassAnalyzer
 	if (signature.charAt(0) == '<') {
 	    String[] genericSignatures = TypeSignature.getGenericSignatures(signature);
 	    generics = new String[genericSignatures.length];
-	    genericTypes = new Type[genericSignatures.length];
+	    genericTypes = new GenericParameterType[genericSignatures.length];
 	    for (int i = 0; i < generics.length; i++) {
 		int colon = genericSignatures[i].indexOf(':');
 		String genName;
@@ -166,6 +167,7 @@ public class ClassAnalyzer
 
         this.parent = parent;
         this.clazz = clazz;
+        this.myType = Type.tClass(clazz, genericTypes);
         this.imports = imports;
 
 	modifiers = clazz.getModifiers();
@@ -242,6 +244,10 @@ public class ClassAnalyzer
 
     public ClassInfo getClazz() {
         return clazz;
+    }
+
+    public ClassType getType() {
+        return myType;
     }
 
 
@@ -505,6 +511,9 @@ public class ClassAnalyzer
     {
 	dumpDeclaration(writer, null, 0.0, 0.0);
     }
+    
+    public void dumpGenericDeclaration(GenericParameterType gen) {
+    }
 
     public void dumpDeclaration(TabbedPrintWriter writer,
 				ProgressListener pl, double done, double scale)
@@ -544,30 +553,23 @@ public class ClassAnalyzer
 	if (!clazz.isInterface())
 	    writer.print("class ");
 	writer.print(name);
-	String signature = clazz.getSignature();
-	System.err.println("Class Signature: "+signature+ " (class "+name+")");
-	ClassInfo superClazz = clazz.getSuperclass();
-	if (superClazz != null && 
-	    superClazz.getName() != "java.lang.Object") {
-	    writer.breakOp();
-	    writer.print(" extends " + (writer.getClassString
-				       (superClazz, Scope.CLASSNAME)));
-	}
-	ClassInfo[] interfaces = clazz.getInterfaces();
-	if (interfaces.length > 0) {
-	    writer.breakOp();
-	    writer.print(clazz.isInterface() ? " extends " : " implements ");
-	    writer.startOp(writer.EXPL_PAREN, 1);
-	    for (int i=0; i < interfaces.length; i++) {
+	if (genericTypes != null) {
+	    writer.print("<");
+	    writer.startOp(TabbedPrintWriter.EXPL_PAREN, 0);
+	    for (int i=0; i< genericTypes.length; i++) {
 		if (i > 0) {
 		    writer.print(", ");
 		    writer.breakOp();
 		}
-		writer.print(writer.getClassString
-			     (interfaces[i], Scope.CLASSNAME));
+		writer.print(genericTypes[i].getClassName());
+		writer.printExtendsImplements(genericTypes[i]);
 	    }
 	    writer.endOp();
+	    writer.print(">");
 	}
+	String signature = clazz.getSignature();
+	System.err.println("Class Signature: "+signature+ " (class "+name+")");
+	writer.printExtendsImplements(Type.tClass(clazz));
 	writer.println();
 
 	writer.openBraceClass();

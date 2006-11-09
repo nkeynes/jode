@@ -100,6 +100,10 @@ public abstract class ClassType extends ReferenceType {
      * @return the interfaces' types.
      */
     public abstract ClassType[] getInterfaces();
+    
+    public Type[] getGenericInstances() {
+	return genericInstances;
+    }
 
     /**
      * Returns true, if all types in this type set are a super type of

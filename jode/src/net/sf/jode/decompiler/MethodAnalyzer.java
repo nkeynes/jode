@@ -461,8 +461,7 @@ public class MethodAnalyzer implements Scope, ClassDeclarer {
 
 	Block[] blocks = bb.getBlocks();
 	FlowBlock[] flows = new FlowBlock[blocks.length];
-	int returnCount;
-        TransformExceptionHandlers excHandlers; 
+	TransformExceptionHandlers excHandlers; 
 	{
 	    for (int i=0; i < blocks.length; i++)
 		flows[i] = new FlowBlock(this, i, i > 0 ? flows[i-1]: null);
