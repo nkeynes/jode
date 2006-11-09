@@ -21,18 +21,13 @@ package net.sf.jode.type;
 import net.sf.jode.bytecode.ClassInfo;
 import net.sf.jode.bytecode.TypeSignature;
 import net.sf.jode.util.SimpleMap;
-import net.sf.jode.util.SimpleSet;
 import net.sf.jode.GlobalOptions;
 
 import java.lang.reflect.Modifier;
 import java.io.IOException;
-import java.util.Vector;
-import java.util.Stack;
-import java.util.Hashtable;
 
 ///#def COLLECTIONS java.util
 import java.util.Map;
-import java.util.Set;
 ///#enddef
 
 /**

@@ -619,6 +619,29 @@ public class TabbedPrintWriter {
 	print(getTypeString(type));
     }
 
+    public void printExtendsImplements(ClassType clazz) {
+	ClassType superClazz = clazz.getSuperClass();
+	if (superClazz != null && 
+	    superClazz.getClassName() != "java.lang.Object") {
+	    breakOp();
+	    print(" extends " + getTypeString(superClazz));
+	}
+	ClassType[] interfaces = clazz.getInterfaces();
+	if (interfaces.length > 0) {
+	    breakOp();
+	    print(clazz.isInterface() ? " extends " : " implements ");
+	    startOp(EXPL_PAREN, 1);
+	    for (int i=0; i < interfaces.length; i++) {
+		if (i > 0) {
+		    print(", ");
+		    breakOp();
+		}
+		print(getTypeString(interfaces[i]));
+	    }
+	    endOp();
+	}
+    }
+
     public void pushScope(Scope scope) {
 	scopes.push(scope);
     }
@@ -708,8 +731,21 @@ public class TabbedPrintWriter {
 	if (type instanceof ArrayType)
 	    return getTypeString(((ArrayType) type).getElementType()) + "[]";
 	else if (type instanceof ClassInfoType) {
-	    ClassInfo clazz = ((ClassInfoType) type).getClassInfo();
-	    return getClassString(clazz, Scope.CLASSNAME);
+	    ClassInfoType classInfoType = (ClassInfoType) type; 
+	    ClassInfo clazz = classInfoType.getClassInfo();
+	    String clazzName = getClassString(clazz, Scope.CLASSNAME);
+	    Type[] genInstances = classInfoType.getGenericInstances();
+	    if (genInstances == null)
+		return clazzName;
+	    StringBuffer sb = new StringBuffer(clazzName);
+	    sb.append("<");
+	    for (int i = 0; i < genInstances.length; i++) {
+		if (i > 0)
+		    sb.append(",");
+		sb.append(getTypeString(genInstances[i]));
+	    }
+	    sb.append(">");
+	    return sb.toString();
 	} else if (type instanceof ClassType) {
 	    String name = ((ClassType) type).getClassName();
 	    if (imports != null) {
