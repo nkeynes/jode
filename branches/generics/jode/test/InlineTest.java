@@ -23,12 +23,12 @@
  * in a different package to check if inlining works over package borders.
  *
  * @author Jochen Hoenicke
- * @see jode.test.OptimizeTest
+ * @see OptimizeTest
  */
 public class InlineTest {
 
     public static final int 
-	difficultSideInline(jode.test.OptimizeTest ot, int a) {
+	difficultSideInline(OptimizeTest ot, int a) {
 	return ot.g++ + a;
     }
 }

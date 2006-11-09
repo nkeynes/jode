@@ -53,25 +53,25 @@ import java.util.Hashtable;
  * @date 98/08/06 */
 public class RangeType extends Type {
     /**
-     * The bottom type set.  Each type in the set represented by
+     * The top type set.  Each type in the set represented by
      * this range type can be casted to all types in bottom type.
      */
-    final ReferenceType bottomType;
+    final ReferenceType topType;
     /**
-     * The top type set.  For each type in this range type, there is a 
+     * The bottom type set.  For each type in this range type, there is a 
      * top type, that can be casted to this type.
      */
-    final ReferenceType topType;
+    final ReferenceType bottomType;
 
     /**
      * Create a new range type with the given bottom and top set.
      */
-    RangeType(ReferenceType bottomType, ReferenceType topType) {
+    RangeType(ReferenceType topType, ReferenceType bottomType) {
         super(TC_RANGE);
-	if (bottomType == tNull)
-	    throw new InternalError("bottom is NULL");
-	this.bottomType = bottomType;
+	if (topType == tNull)
+	    throw new InternalError("top is NULL");
 	this.topType    = topType;
+	this.bottomType = bottomType;
     }
 
     /**
@@ -79,17 +79,17 @@ public class RangeType extends Type {
      * be casted to all bottom types by a widening cast.
      * @return the bottom type set 
      */
-    ReferenceType getBottom() {
-        return bottomType;
+    ReferenceType getTop() {
+        return topType;
     }
 
     /**
-     * Returns the top type set.  For each type in this range type,
-     * there is a top type, that can be casted to this type.  
-     * @return the top type set
+     * Returns the bottom type set.  For each type in this range type,
+     * there is a bottom type, that can be casted to this type.  
+     * @return the bottom type set
      */
-    ReferenceType getTop() {
-        return topType;
+    ReferenceType getBottom() {
+        return bottomType;
     }
 
     
@@ -101,13 +101,13 @@ public class RangeType extends Type {
      * @return the hint type.  
      */
     public Type getHint() {
-	Type bottomHint = bottomType.getHint();
 	Type topHint = topType.getHint();
+	Type bottomHint = bottomType.getHint();
 	
-	if (topType == tNull && bottomType.equals(bottomHint))
-	    return bottomHint;
+	if (bottomType == tNull && topType.equals(topHint))
+	    return topHint;
 
-	return topHint;
+	return bottomHint;
     }
 
     /**
@@ -116,7 +116,7 @@ public class RangeType extends Type {
      * @return the canonic type.  
      */
     public Type getCanonic() {
-	return topType.getCanonic();
+	return bottomType.getCanonic();
     }
 
     /**
@@ -125,7 +125,7 @@ public class RangeType extends Type {
      * @return the set of super types.
      */
     public Type getSuperType() {
-	return topType.getSuperType();
+	return bottomType.getSuperType();
     }
 
     /**
@@ -134,7 +134,7 @@ public class RangeType extends Type {
      * @return the set of super types.
      */
     public Type getSubType() {
-	return tRange(bottomType, tNull);
+	return tRange(topType, tNull);
     }
 	    
     /**
@@ -143,26 +143,26 @@ public class RangeType extends Type {
      * @return the middle type, or null if it is not necessary.
      */
     public Type getCastHelper(Type fromType) {
-	return topType.getCastHelper(fromType);
+	return bottomType.getCastHelper(fromType);
     }
 
     public String getTypeSignature() {
-        if (topType.isClassType() || !bottomType.isValidType())
-            return topType.getTypeSignature();
-        else
+        if (bottomType.isClassType() || !topType.isValidType())
             return bottomType.getTypeSignature();
+        else
+            return topType.getTypeSignature();
     }
 
     public Class getTypeClass() throws ClassNotFoundException {
-        if (topType.isClassType() || !bottomType.isValidType())
-            return topType.getTypeClass();
-        else
+        if (bottomType.isClassType() || !topType.isValidType())
             return bottomType.getTypeClass();
+        else
+            return topType.getTypeClass();
     }
 
     public String toString()
     {
-	return "<" + bottomType + "-" + topType + ">";
+	return "<" + topType + "-" + bottomType + ">";
     }
 
     public String getDefaultName() {
@@ -170,29 +170,29 @@ public class RangeType extends Type {
     }
 
     public int hashCode() {
-	int hashcode = topType.hashCode();
-	return (hashcode << 16 | hashcode >>> 16) ^ bottomType.hashCode();
+	int hashcode = bottomType.hashCode();
+	return (hashcode << 16 | hashcode >>> 16) ^ topType.hashCode();
     }
 
     public boolean equals(Object o) {
         if (o instanceof RangeType) {
             RangeType type = (RangeType) o;
-            return topType.equals(type.topType) 
-                && bottomType.equals(type.bottomType);
+            return bottomType.equals(type.bottomType) 
+                && topType.equals(type.topType);
         }
         return false;
     }
 
     public boolean containsClass(ClassInfo clazz) {
 	ClassType clazzType = Type.tClass(clazz, null);
-	if (!bottomType.maybeSuperTypeOf(clazzType))
+	if (!topType.maybeSuperTypeOf(clazzType))
 	    return false;
-	if (topType == tNull)
+	if (bottomType == tNull)
 	    return true;
-	if (topType instanceof ClassType)
-	    return clazzType.maybeSuperTypeOf((ClassType) topType);
-	if (topType instanceof MultiClassType) {
-	    ClassType[] classes = ((MultiClassType) topType).classes;
+	if (bottomType instanceof ClassType)
+	    return clazzType.maybeSuperTypeOf((ClassType) bottomType);
+	if (bottomType instanceof MultiClassType) {
+	    ClassType[] classes = ((MultiClassType) bottomType).classes;
 	    for (int i = 0; i < classes.length; i++) {
 		if (clazzType.maybeSuperTypeOf(classes[i]))
 		    return true;
@@ -213,8 +213,8 @@ public class RangeType extends Type {
 	    return this;
 
 	Type top, bottom, result;
-	bottom = bottomType.getSpecializedType(type);
-	top = topType.getGeneralizedType(type);
+	bottom = topType.getSpecializedType(type);
+	top = bottomType.getGeneralizedType(type);
 	if (top.equals(bottom))
 	    result = top;
 	else if (top instanceof ReferenceType

@@ -327,7 +327,7 @@ public class Type {
 	while (iter.hasNext()) {
 	    ClassInfoType type = (ClassInfoType) iter.next();
 	    if (type.getClassInfo() == clazzinfo
-		&& Arrays.equals(generics, type.genInstances))
+		&& Arrays.equals(generics, type.genericInstances))
 		return type;
 	}
 	ClassInfoType type = new ClassInfoType(clazzinfo, generics);

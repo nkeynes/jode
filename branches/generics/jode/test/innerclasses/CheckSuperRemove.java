@@ -5,11 +5,12 @@ public class CheckSuperRemove {
 	    }
 	    MyInner myInner = new MyInner();
 	    Inner anonInner = new Inner() {
-		    public void test() {}
-		};
+		public void test() {}
+	    };
+	    /*FIXME: Understand why this does not work:
 	    MyInner anonInner2 = new MyInner() {
-		    public void test() {}
-		};
+		public void test() {}
+	    };*/
 	}
     }
 

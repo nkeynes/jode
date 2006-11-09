@@ -124,7 +124,7 @@ public class ArrayType extends ClassType {
          *  tArray(x), other     -> tError
          */
 	if (type.getTypeCode() == TC_RANGE) {
-	    type = ((RangeType) type).getBottom();
+	    type = ((RangeType) type).getTop();
 	}
 	if (type == tNull)
 	    return this;
@@ -150,7 +150,7 @@ public class ArrayType extends ClassType {
 	 *  tArray(x), other     -> tError
          */
 	if (type.getTypeCode() == TC_RANGE) {
-	    type = ((RangeType) type).getTop();
+	    type = ((RangeType) type).getBottom();
 	}
 	if (type == tNull)
             return this;

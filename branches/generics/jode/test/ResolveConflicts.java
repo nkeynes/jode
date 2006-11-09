@@ -119,7 +119,7 @@ public class ResolveConflicts
 ///#endif
 ///#endif
 ///#ifdef JAVAC11
-		return null;
+///		return null;
 ///#else
 		return ResolveConflicts.this.new Conflicts().new Inner();
 ///#endif
