@@ -63,6 +63,7 @@ class TryCatch {
         }
     }
 
+    @SuppressWarnings("finally")
     int finallyBreaks() {
         try {
             simple();
@@ -75,6 +76,7 @@ class TryCatch {
         }
     }
 
+    @SuppressWarnings("finally")
     int whileInTry() {
         int a=1;
         try {
@@ -95,6 +97,7 @@ class TryCatch {
         }
     }
 
+    @SuppressWarnings("finally")
     void foo() {
         TryCatch local = null;
         while (true) {

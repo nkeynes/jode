@@ -20,25 +20,30 @@
 package net.sf.jode.expr;
 import net.sf.jode.type.Type;
 import net.sf.jode.bytecode.ClassInfo;
+import net.sf.jode.decompiler.ClassAnalyzer;
 import net.sf.jode.decompiler.Scope;
 import net.sf.jode.decompiler.TabbedPrintWriter;
 
 public class ThisOperator extends NoArgOperator {
     boolean isInnerMost;
-    ClassInfo classInfo;
+    ClassAnalyzer classAna;
 
-    public ThisOperator(ClassInfo classInfo, boolean isInnerMost) {
-        super(Type.tClass(classInfo));
-	this.classInfo = classInfo;
+    public ThisOperator(ClassAnalyzer classAna, boolean isInnerMost) {
+        super(classAna.getType());
+	this.classAna = classAna;
 	this.isInnerMost = isInnerMost;
     }
 
-    public ThisOperator(ClassInfo classInfo) {
-	this(classInfo, false);
+    public ThisOperator(ClassAnalyzer classAna) {
+	this(classAna, false);
     }
 
     public ClassInfo getClassInfo() {
-	return classInfo;
+	return classAna.getClazz();
+    }
+
+    public ClassAnalyzer getClassAnalyzer() {
+	return classAna;
     }
 
     public int getPriority() {
@@ -46,18 +51,18 @@ public class ThisOperator extends NoArgOperator {
     }
 
     public String toString() {
-        return classInfo+".this";
+        return classAna+".this";
     }
 
     public boolean opEquals(Operator o) {
         return (o instanceof ThisOperator &&
-                ((ThisOperator) o).classInfo.equals(classInfo));
+                ((ThisOperator) o).classAna == classAna);
     }
 
     public void dumpExpression(TabbedPrintWriter writer)
 	throws java.io.IOException {
 	if (!isInnerMost) {
-	    writer.print(writer.getClassString(classInfo, 
+	    writer.print(writer.getClassString(getClassInfo(), 
 					       Scope.AMBIGUOUSNAME));
 	    writer.print(".");
 	}

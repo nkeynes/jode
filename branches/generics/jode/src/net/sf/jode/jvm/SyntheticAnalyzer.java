@@ -311,12 +311,12 @@ public class SyntheticAnalyzer implements Opcodes {
 	    }
 	    MethodInfo refMethod
 		= refClazz.findMethod(ref.getName(), ref.getType());
-	    MethodType refType = Type.tMethod(classInfo.getClassPath(),
-					      ref.getType());
+	    String[] refParams = TypeSignature.getParameterTypes(ref.getType());
+	    String retType = TypeSignature.getReturnType(ref.getType());
 	    if ((refMethod.getModifiers() & modifierMask) != 0
-		|| refType.getParameterTypes().length != params)
+		|| refParams.length != params)
 		return false;
-	    if (refType.getReturnType() == Type.tVoid) {
+	    if (retType.equals("V")) {
 		if (iter.hasNext())
 		    return false;
 	    } else {
@@ -390,12 +390,11 @@ public class SyntheticAnalyzer implements Opcodes {
 		return false;
 	    MethodInfo refMethod
 		= refClazz.findMethod(ref.getName(), ref.getType());
-	    MethodType refType = Type.tMethod(classInfo.getClassPath(),
-					      ref.getType());
+	    String[] refParams = TypeSignature.getParameterTypes(ref.getType());
 	    if ((refMethod.getModifiers() & modifierMask) != 0
 		|| !refMethod.getName().equals("<init>")
 		|| unifyParam == -1
-		|| refType.getParameterTypes().length != params - 2)
+		|| refParams.length != params - 2)
 		return false;	    
 	    if (iter.hasNext())
 		return false;

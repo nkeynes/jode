@@ -76,7 +76,7 @@ public class CreateClassField {
 		cmp.setSubExpressions
 		    (0, new ClassFieldOperator(put.getType(),
 					       clazz.charAt(0) == '[' 
-					       ? Type.tType(cp, clazz)
+					       ? Type.tType(invoke.getClassAnalyzer(), clazz)
 					       : Type.tClass(cp, clazz)));
 		EmptyBlock empty = new EmptyBlock();
 		empty.moveJump(ifBlock.thenBlock.jump);

@@ -100,7 +100,7 @@ public class IfThenElseOperator extends Operator {
 			    return new ClassFieldOperator
 				(invoke.getType(),
 				 clazz.charAt(0) == '[' 
-				 ? Type.tType(cp, clazz)
+				 ? Type.tType(field.getClassAnalyzer(), clazz)
 				 : Type.tClass(cp, clazz));
 		    }
 		}

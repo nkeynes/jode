@@ -21,6 +21,7 @@ package net.sf.jode.decompiler;
 import net.sf.jode.GlobalOptions;
 import net.sf.jode.bytecode.ClassInfo;
 import net.sf.jode.bytecode.ClassPath;
+import net.sf.jode.type.SystemClassType;
 import net.sf.jode.type.Type;
 import net.sf.jode.type.ArrayType;
 import net.sf.jode.type.ClassInfoType;
@@ -321,7 +322,7 @@ public class ImportHandler {
 	    useType(((ArrayType) type).getElementType());
 	else if (type instanceof ClassInfoType)
 	    useClass(((ClassInfoType) type).getClassInfo());
-	else if (type instanceof ClassType)
+	else if (type instanceof SystemClassType)
 	    useClass(((ClassType) type).getClassName());
     }
 

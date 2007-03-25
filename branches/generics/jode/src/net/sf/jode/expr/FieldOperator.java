@@ -62,8 +62,8 @@ public abstract class FieldOperator extends Operator {
 
         this.methodAnalyzer = methodAnalyzer;
         this.staticFlag = staticFlag;
-	this.type = Type.tType(classPath, ref.getType());
-        this.classType = Type.tType(classPath, ref.getClazz());
+	this.type = Type.tType(methodAnalyzer, ref.getType());
+        this.classType = Type.tType(methodAnalyzer, ref.getClazz());
 	this.ref = ref;
         if (staticFlag)
             methodAnalyzer.useType(classType);
@@ -119,7 +119,7 @@ public abstract class FieldOperator extends Operator {
 	    while (true) {
 		if (clazz == ana.getClazz()) {
 		    int field = ana.getFieldIndex
-			(ref.getName(), Type.tType(classPath, ref.getType()));
+			(ref.getName(), Type.tType(methodAnalyzer, ref.getType()));
 		    if (field >= 0)
 			return ana.getField(field);
 		    return null;
@@ -143,7 +143,7 @@ public abstract class FieldOperator extends Operator {
     }
 
     public Type getFieldType() {
-        return Type.tType(classPath, ref.getType());
+        return Type.tType(methodAnalyzer, ref.getType());
     }
 
     private void loadFields(ClassInfo clazz) {

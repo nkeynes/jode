@@ -31,7 +31,7 @@ public class ArrayType extends ClassType {
     Type elementType;
 
     ArrayType(Type elementType) {
-        super(TC_ARRAY, elementType + "[]");
+        super(TC_ARRAY, elementType + "[]", null);
         this.elementType = elementType;
     }
 

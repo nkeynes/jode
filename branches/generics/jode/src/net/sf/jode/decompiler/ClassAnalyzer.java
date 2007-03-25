@@ -178,7 +178,7 @@ public class ClassAnalyzer
 	 */
 	if ((Options.options & Options.OPTION_INNER) != 0
 	    && parent instanceof ClassAnalyzer && !isStatic())
-	    outerInstance = new ThisOperator(((ClassAnalyzer) parent).clazz);
+	    outerInstance = new ThisOperator((ClassAnalyzer) parent);
 	if (outerValues != null)
 	    this.outerValues = new OuterValues(this, outerValues);
     }
@@ -569,7 +569,7 @@ public class ClassAnalyzer
 	}
 	String signature = clazz.getSignature();
 	System.err.println("Class Signature: "+signature+ " (class "+name+")");
-	writer.printExtendsImplements(Type.tClass(clazz));
+	writer.printExtendsImplements(myType);
 	writer.println();
 
 	writer.openBraceClass();
@@ -797,6 +797,18 @@ public class ClassAnalyzer
 	if (parent == null)
 	    return null;
 	return getParent().getClassAnalyzer(cinfo);
+    }
+
+    public GenericParameterType getGenericType(String name) {
+	if (genericTypes != null) {
+	    for (int i = 0; i < genericTypes.length; i++) {
+		if (genericTypes[i].getClassName().equals(name))
+		    return genericTypes[i];
+	    }
+	}
+	if (parent != null)
+	    return parent.getGenericType(name);
+	return null;
     }
 
     /**
