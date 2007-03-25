@@ -20,6 +20,7 @@
 package net.sf.jode.type;
 import net.sf.jode.bytecode.ClassPath;
 import net.sf.jode.bytecode.TypeSignature;
+import net.sf.jode.decompiler.ClassDeclarer;
 
 /** 
  * This type represents an method type.
@@ -32,21 +33,29 @@ public class MethodType extends Type {
     final Type returnType;
     final ClassPath cp;
 
-    public MethodType(ClassPath cp, String signature) {
+    public MethodType(ClassPath cp, ClassType declarer, String signature) {
+	/* TODO:
+	 * We need TypeVariable:  e.g. iff we have
+	 * E getElm<E>(Vector<E> v);
+	 * then E is a TypeVariable and if we now, that input type is a
+	 * vector of Integer, then return value is Integer...
+	 * 	
+	 * A problem is that casts of v omit the value for E.
+	 */
 	super(TC_METHOD);
 	this.cp = cp;
         this.signature = signature;
 	if (signature.charAt(0) == '<') {
-	    /*FIXME */
+	    /* handled by MethodAnalyzer */
 	    signature = signature.substring(signature.indexOf('('));
 	}
 	String[] params = TypeSignature.getParameterTypes(signature);
 	parameterTypes = new Type[params.length];
 	for (int i = 0; i < params.length; i++) {
-	    parameterTypes[i] = Type.tType(cp, params[i]);
+	    parameterTypes[i] = Type.tType(cp, declarer, params[i]);
 	}
-	returnType = Type.tType(cp, 
-				signature.substring(signature.indexOf(')')+1));
+	returnType = Type.tType(cp, declarer, 
+				TypeSignature.getReturnType(signature));
     }
 
     public final int stackSize() {

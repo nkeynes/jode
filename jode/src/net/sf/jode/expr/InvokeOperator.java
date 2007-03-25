@@ -155,10 +155,11 @@ public final class InvokeOperator extends Operator
         super(Type.tUnknown, 0);
 	this.classPath = methodAnalyzer.getClassAnalyzer().getClassPath();
 	this.ref = reference;
-        this.methodType = Type.tMethod(classPath, reference.getType());
+        this.methodType = Type.tMethod(methodAnalyzer.getClassPath(), 
+        	                       null, reference.getType());
         this.methodName = reference.getName();
         this.classType = (ClassType) 
-	    Type.tType(classPath, reference.getClazz());
+	    Type.tType(methodAnalyzer.getClassPath(), null, reference.getClazz());
 	this.hints = null;
 	Map allHints = (Map) hintTypes.get(methodName+"."+methodType);
 	if (allHints != null) {
@@ -774,7 +775,7 @@ public final class InvokeOperator extends Operator
 		    continue next_method;
 
 		Type[] otherParamTypes
-		    = Type.tMethod(classPath, methods[i].getType())
+		    = Type.tMethod(methodAnalyzer.getClassPath(), null, methods[i].getSignature())
 		    .getParameterTypes();
 		if (otherParamTypes.length != myParamTypes.length) {
 		    /* parameter count doesn't match*/
@@ -1120,7 +1121,7 @@ public final class InvokeOperator extends Operator
 		/* XXX check if this is a private method. */
 		if (needsCast(0, paramTypes)){
 		    writer.print("(");
-		    writer.startOp(writer.EXPL_PAREN, 1);
+		    writer.startOp(TabbedPrintWriter.EXPL_PAREN, 1);
 		    writer.print("(");
 		    writer.printType(classType);
 		    writer.print(") ");
@@ -1135,7 +1136,7 @@ public final class InvokeOperator extends Operator
 		writer.print(".");
 	    } else {
 		writer.print("(");
-		writer.startOp(writer.EXPL_PAREN, 0);
+		writer.startOp(TabbedPrintWriter.EXPL_PAREN, 0);
 		writer.print("(NON VIRTUAL ");
 		writer.printType(classType);
 		writer.print(") ");

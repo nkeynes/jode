@@ -152,8 +152,8 @@ public abstract class Opcodes implements net.sf.jode.bytecode.Opcodes {
 		if (instr.getConstant() instanceof Reference) {
 		    Reference ref = (Reference) instr.getConstant();
 		    expr = new ClassFieldOperator
-			(Type.tType(cp, ref.getType()),
-			 Type.tType(cp, ref.getClazz()));
+			(Type.tType(ma.getClassPath(), null, ref.getType()),
+			 Type.tType(ma.getClassPath(), null, ref.getClazz()));
 		} else if (instr.getConstant() instanceof String) {
 		    expr = new ConstOperator(cp, (String) instr.getConstant());
 		} else {

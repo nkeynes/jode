@@ -22,10 +22,12 @@ import net.sf.jode.GlobalOptions;
 import net.sf.jode.bytecode.BasicBlocks;
 import net.sf.jode.bytecode.Block;
 import net.sf.jode.bytecode.ClassInfo;
+import net.sf.jode.bytecode.ClassPath;
 import net.sf.jode.bytecode.Handler;
 import net.sf.jode.bytecode.Instruction;
 import net.sf.jode.bytecode.LocalVariableInfo;
 import net.sf.jode.bytecode.MethodInfo;
+import net.sf.jode.bytecode.TypeSignature;
 import net.sf.jode.jvm.SyntheticAnalyzer;
 import net.sf.jode.type.*;
 import net.sf.jode.expr.Expression;
@@ -53,6 +55,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 
 ///#def COLLECTIONS java.util
+import java.util.List;
 import java.util.Map;
 import java.util.Collection;
 import java.util.ArrayList;
@@ -186,6 +189,11 @@ public class MethodAnalyzer implements Scope, ClassDeclarer {
      * classes that are used in this method.
      */
     Collection usedAnalyzers;
+    /**
+     * This array contains the generic types this method declares if
+     * it is generic.
+     */
+    GenericParameterType[] genericTypes;
 
     /**
      * This is the default constructor.
@@ -199,7 +207,47 @@ public class MethodAnalyzer implements Scope, ClassDeclarer {
         this.imports = imports;
 	this.minfo = minfo;
         this.methodName = minfo.getName();
-        this.methodType = Type.tMethod(cla.getClassPath(), minfo.getSignature());
+        String signature = minfo.getSignature();
+	if (signature.charAt(0) == '<') {
+	    String[] genericSignatures = 
+		TypeSignature.getGenericSignatures(signature);
+	    genericTypes = new GenericParameterType[genericSignatures.length];
+	    for (int i = 0; i < genericTypes.length; i++) {
+		int colon = genericSignatures[i].indexOf(':');
+		String genName;
+		if (colon == -1) {
+		    genericTypes[i] = 
+			new GenericParameterType(genericSignatures[i],
+						 Type.tObject,
+						 new ClassType[0]);
+		} else {
+		    String genname = genericSignatures[i].substring(0, colon);
+		    String remainder = genericSignatures[i].substring(colon+1);
+		    int nextIndex = TypeSignature.skipType(remainder, 0);
+		    List superClazzes = new ArrayList();
+		    for (;;) {
+			String clazzSig = remainder.substring(0, nextIndex);
+			superClazzes.add(Type.tType(classAnalyzer.getClassPath(),
+				                    classAnalyzer.getType(), clazzSig));
+			if (nextIndex >= remainder.length())
+			    break;
+			remainder = remainder.substring(nextIndex+1);
+		    }
+		    ClassType genSupClass = (ClassType) superClazzes.get(0);
+		    if (!genSupClass.isInterface())
+			superClazzes.remove(0);
+		    else
+			genSupClass = Type.tObject;
+		    ClassType[] genSupIfaces = (ClassType[]) 
+			superClazzes.toArray(new ClassType[0]);
+		    genericTypes[i] = new GenericParameterType(genname,
+							       genSupClass,
+							       genSupIfaces);
+		}
+	    }
+	}
+
+        this.methodType = Type.tMethod(cla.getClassPath(), cla.getType(), signature);
         this.isConstructor = 
             methodName.equals("<init>") || methodName.equals("<clinit>");
         
@@ -423,8 +471,10 @@ public class MethodAnalyzer implements Scope, ClassDeclarer {
         LocalInfo li = new LocalInfo(this, lvi.getSlot());
 	if ((Options.options & Options.OPTION_LVT) != 0
 	    && lvi.getName() != null)
-	    li.addHint(lvi.getName(), Type.tType(classAnalyzer.getClassPath(),
-						 lvi.getType()));
+	    li.addHint(lvi.getName(), 
+		       Type.tType(classAnalyzer.getClassPath(), 
+			          classAnalyzer.getType(),
+			          lvi.getType()));
 	allLocals.addElement(li);
         return li;
     }
@@ -582,11 +632,10 @@ public class MethodAnalyzer implements Scope, ClassDeclarer {
 	int offset = 0;
 	int slot = 0;
 	if (!isStatic()) {
-	    ClassInfo classInfo = classAnalyzer.getClazz();
 	    param[offset] = getLocalInfo(bb != null
 					 ? bb.getParamInfo(slot)
 					 : LocalVariableInfo.getInfo(slot));
-	    param[offset].setExpression(new ThisOperator(classInfo, true));
+	    param[offset].setExpression(new ThisOperator(classAnalyzer, true));
 	    slot++;
 	    offset++;
 	}
@@ -1011,7 +1060,7 @@ public class MethodAnalyzer implements Scope, ClassDeclarer {
 			    expr).getSubExpressions()[0];
 		if (expr instanceof ThisOperator) {
 		    outerValueArray[j] = 
-			new ThisOperator(((ThisOperator) expr).getClassInfo());
+			new ThisOperator(((ThisOperator) expr).getClassAnalyzer());
 		    continue;
 		}
 		LocalInfo li = null;
@@ -1109,6 +1158,23 @@ public class MethodAnalyzer implements Scope, ClassDeclarer {
 	return getParent().getClassAnalyzer(cinfo);
     }
 
+    public GenericParameterType getGenericType(String name) {
+	if (genericTypes != null) {
+	    for (int i = 0; i < genericTypes.length; i++) {
+		if (genericTypes[i].getClassName().equals(name))
+		    return genericTypes[i];
+	    }
+	}
+	return getParent().getGenericType(name);
+    }
+
+    /**
+     * Gets the current class path.
+     */
+    public ClassPath getClassPath() {
+	return classAnalyzer.getClassPath();
+    }
+    
     public void addClassAnalyzer(ClassAnalyzer clazzAna) {
 	if (innerAnalyzers == null)
 	    innerAnalyzers = new Vector();

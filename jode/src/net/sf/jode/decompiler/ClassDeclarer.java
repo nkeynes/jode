@@ -19,6 +19,8 @@
 
 package net.sf.jode.decompiler;
 import net.sf.jode.bytecode.ClassInfo;
+import net.sf.jode.bytecode.ClassPath;
+import net.sf.jode.type.GenericParameterType;
 
 /**
  * This is the interface for objects, that a method can declare
@@ -29,6 +31,12 @@ public interface ClassDeclarer {
      * @return null if this is the outermost instance.
      */
     public ClassDeclarer getParent();
+    
+    /**
+     * Get the current class path.
+     * @return the current class path.
+     */
+    public ClassPath getClassPath();
 
     /**
      * Get the class analyzer for the given anonymous class info.  It
@@ -37,6 +45,14 @@ public interface ClassDeclarer {
      * @return null if the class analyzer doesn't yet exists.  
      */
     public ClassAnalyzer getClassAnalyzer(ClassInfo ci);
+
+
+    /**
+     * Gets the generic type for the given named generic.
+     * @param name  the name of the generic, e.g. K.
+     * @return the generic type for the named generic.
+     */
+    public GenericParameterType getGenericType(String name);
 
     public void addClassAnalyzer(ClassAnalyzer classAna);
 }

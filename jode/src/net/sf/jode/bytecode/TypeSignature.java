@@ -19,6 +19,7 @@
 
 package net.sf.jode.bytecode;
 ///#def COLLECTIONS java.util
+import java.util.ArrayList;
 import java.util.Map;
 ///#enddef
 
@@ -429,6 +430,65 @@ public class TypeSignature {
 	return params;
     }
 
+    /**
+     * Gets the signature of the super class from a class signature.
+     * @param typeSig the class's signature.
+     * @return the signature of the super class.
+     */
+    public static String getSuperSignature(String typeSig) {
+	int pos = 0;
+	if (typeSig.charAt(0) == '<') {
+	    /* Skip generic info */
+	    pos++;
+	    while (typeSig.charAt(pos) != '>') {
+		while (typeSig.charAt(pos) != ':')
+		    pos++;
+		/* check for empty entry */
+		if (typeSig.charAt(pos+1) == ':')
+		    pos++;
+		while (typeSig.charAt(pos) == ':') {
+		    /* skip colon and type */
+		    pos = skipType(typeSig, pos + 1);
+		}
+	    }
+	    pos++;
+	}
+	return typeSig.substring(pos, skipType(typeSig, pos));
+    }
+
+    /**
+     * Gets the signatures of the super interfaces from a class signature.
+     * @param typeSig the class's signature.
+     * @return an array containing the signatures of the interfaces.
+     */
+    public static String[] getIfaceSignatures(String typeSig) {
+	int pos = 0;
+	if (typeSig.charAt(0) == '<') {
+	    /* Skip generic info */
+	    pos++;
+	    while (typeSig.charAt(pos) != '>') {
+		while (typeSig.charAt(pos) != ':')
+		    pos++;
+		/* check for empty entry */
+		if (typeSig.charAt(pos+1) == ':')
+		    pos++;
+		while (typeSig.charAt(pos) == ':') {
+		    /* skip colon and type */
+		    pos = skipType(typeSig, pos + 1);
+		}
+	    }
+	    pos++;
+	}
+	pos = skipType(typeSig, pos);
+	ArrayList list = new ArrayList();
+	while (pos < typeSig.length()) {
+	    int epos = skipType(typeSig, pos);
+	    list.add(typeSig.substring(pos, epos));
+	    pos = epos;
+	}
+	return (String[]) list.toArray(new String[list.size()]);
+    }
+
     private static int mapGenericsInType(String typeSig, Map generics,
 					 StringBuffer mapped, int spos) {
 	int pos = spos;
@@ -551,34 +611,36 @@ public class TypeSignature {
     private static int checkClassName(String clName, int i) 
 	throws IllegalArgumentException, StringIndexOutOfBoundsException 
     {
-	while (true) {
-	    char c = clName.charAt(i++);
-	    if (c == '<') {
-		c = clName.charAt(i++);
-		do {
-		    if (c == '*')
-			i++;
-		    else { 
-			if (c == '+' || c == '-')
-			    c = clName.charAt(i++);
-			if (c != 'L' && c != 'T' && c != '[')
-			    throw new IllegalArgumentException
-				("Wrong class instantiation: "+clName);
-			i = checkTypeSig(clName, i - 1);
-		    }
-		    c = clName.charAt(i++);
-		} while (c != '>');
-		c = clName.charAt(i++);
-		if (c != ';')
-		    throw new IllegalArgumentException
-			("no ; after > in "+clName);
-	    }
-	    if (c == ';')
-		return i;
+	char c = clName.charAt(i++);
+	while (c != ';' && c != '.' && c != '<') {
 	    if (c != '/' && !Character.isJavaIdentifierPart(c))
 		throw new IllegalArgumentException("Illegal java class name: "
 						   + clName);
+	    c = clName.charAt(i++);
 	}
+	if (c == '<') {
+	    c = clName.charAt(i++);
+	    do {
+		if (c == '*')
+		    i++;
+		else { 
+		    if (c == '+' || c == '-')
+			c = clName.charAt(i++);
+		    if (c != 'L' && c != 'T' && c != '[')
+			throw new IllegalArgumentException
+				("Wrong class instantiation: "+clName);
+		    i = checkTypeSig(clName, i - 1);
+		}
+		c = clName.charAt(i++);
+	    } while (c != '>');
+	    c = clName.charAt(i++);
+	}
+	if (c == '.')
+	    return checkClassName(clName, i);
+	if (c != ';')
+	    throw new IllegalArgumentException
+		("no ; after > in "+clName);
+	return i;
     }
 
     /**

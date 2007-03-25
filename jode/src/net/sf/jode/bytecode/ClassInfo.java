@@ -1210,8 +1210,10 @@ public final class ClassInfo extends BinaryInfo implements Comparable {
     public String getSignature() {
         if (status < HIERARCHY)
             throw new IllegalStateException("status is "+status);
-        if (signature != null)
+        if (signature != null) {
+            System.err.println("Sig(attrib) of "+this+": "+signature);/*XXX REMOVE*/
 	    return signature;
+        }
 	if (superclass == null)
 	    return "";
 	StringBuffer sb = new StringBuffer();
@@ -1221,6 +1223,7 @@ public final class ClassInfo extends BinaryInfo implements Comparable {
 	    sb.append('L').append(interfaces[i].getName().replace('.','/'))
 		.append(";");
 	}
+        System.err.println("Sig of "+this+": "+sb.toString());/*XXX REMOVE*/
 	return sb.toString();
     }
 

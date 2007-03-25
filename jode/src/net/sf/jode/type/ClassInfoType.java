@@ -43,8 +43,9 @@ public class ClassInfoType extends ClassType {
         return clazz;
     }
 
-    public ClassInfoType(ClassInfo clazz, Type[] generics) {
-        super(TC_CLASS, clazz.getName());
+    public ClassInfoType(ClassInfo clazz, Type[] generics, 
+	    		 ClassType outerClass) {
+        super(TC_CLASS, clazz.getName(), outerClass);
 	
 	this.clazz = clazz;
 	try {
@@ -70,20 +71,15 @@ public class ClassInfoType extends ClassType {
 	Map genericMap = new SimpleMap();
 	if (generics != null) {
 	    /* parse generic names */
-	    String[] genNames;
-	    if (signature.charAt(0) != '<')
-		throw new IllegalArgumentException
-		    ("Generic parameters for non-generic class");
-	    
-	    genNames = TypeSignature.getGenericNames(signature);
-	    if (generics.length != genNames.length)
+	    genericNames = TypeSignature.getGenericNames(signature);
+	    if (generics.length != genericNames.length)
 		throw new IllegalArgumentException
 		    ("Wrong number of generic parameters");
-	    for (int i = 0; i < generics.length; i++)
-		genericMap.put(genNames[i], generics[i].getTypeSignature());
 	}
-
-	signature = TypeSignature.mapGenerics(signature, genericMap); 
+    }
+    
+    public ClassInfoType(ClassInfo clazz, Type[] generics) {
+	this(clazz, generics, null);
     }
 
     public boolean isUnknown() {
@@ -99,26 +95,30 @@ public class ClassInfoType extends ClassType {
     }
 
     public ClassType getSuperClass() {
-	if (clazz.isInterface())
+	String signature = clazz.getSignature();
+	if (clazz.isInterface() || signature.length() == 0)
 	    return null;
 	if (superClass == null) {
-	    ClassInfo superInfo = clazz.getSuperclass();
-	    if (superInfo == null)
-		return null;
-	    superClass = Type.tClass(superInfo);
+	    String superSig = TypeSignature.getSuperSignature(signature);
+	    superClass = (ClassType) tType(clazz.getClassPath(), this, superSig); 
 	}
 	return superClass;
     }
 
     public ClassType[] getInterfaces() {
 	if (interfaces == null) {
-	    ClassInfo[] ifaceInfos = clazz.getInterfaces();
-	    if (ifaceInfos.length == 0)
+	    String sig = clazz.getSignature();
+	    if (sig.length() == 0)
+		return EMPTY_IFACES;
+	    String[] ifaceSigs = 
+		TypeSignature.getIfaceSignatures(sig);
+	    if (ifaceSigs.length == 0)
 		interfaces = EMPTY_IFACES;
 	    else {
-		interfaces = new ClassType[ifaceInfos.length];
+		interfaces = new ClassType[ifaceSigs.length];
 		for (int i=0; i < interfaces.length; i++)
-		    interfaces[i] = Type.tClass(ifaceInfos[i]);
+		    interfaces[i] = (ClassType) 
+			Type.tType(clazz.getClassPath(), this, ifaceSigs[i]);
 	    }
 	}
 	return interfaces;

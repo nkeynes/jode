@@ -33,6 +33,7 @@ public abstract class ClassType extends ReferenceType {
     protected String className;
     protected String[] genericNames;
     protected Type[]   genericInstances;
+    protected ClassType outerClass;
 
     /*
      * @invariant (genericNames == null) == (genericInstances == null)
@@ -50,12 +51,15 @@ public abstract class ClassType extends ReferenceType {
 		if (genericNames[i].equals(name))
 		    return genericInstances[i];
 	}
+	if (outerClass != null)
+	    return outerClass.getGeneric(name);
 	return null;
     }
 
-    public ClassType(int typecode, String clazzName) {
+    public ClassType(int typecode, String clazzName, ClassType outerClass) {
 	super(typecode);
 	className = clazzName;
+	this.outerClass = outerClass;
     }
 
     public ClassType(int typecode, String clazzName, 

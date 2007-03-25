@@ -18,16 +18,13 @@
  */
 
 package net.sf.jode.type;
-import net.sf.jode.bytecode.ClassInfo;
-import java.util.Vector;
-import java.util.Stack;
-import java.util.Hashtable;
-import java.io.IOException;
 
 /**
- * This class represents the type of a system class, i.e. the classes
- * from package java.lang, that need special handling, like
- * Object, String, StringBuffer, etc.
+ * This class represents the singleton set containing one parameter type. For
+ * example in the context of the class <code>Enum&lt;E extends
+ * Enum&lt;E&gt;&gt;</code> the identifier <code>E</code> denotes such a
+ * parameter type.  It has the super class <code>Enum&lt;E&gt;</code> and
+ * implements no interfaces.
  *
  * @author Jochen Hoenicke 
  */
@@ -41,7 +38,7 @@ public class GenericParameterType extends ClassType {
     public GenericParameterType(String className, 
 				ClassType superType, 
 				ClassType[] ifacesTypes) {
-	super(TC_SYSCLASS, className);
+	super(TC_SYSCLASS, className, null);
 	this.superType = superType;
 	this.ifacesTypes = ifacesTypes;
     }

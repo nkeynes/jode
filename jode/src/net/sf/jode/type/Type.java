@@ -22,11 +22,10 @@ import net.sf.jode.GlobalOptions;
 import net.sf.jode.bytecode.ClassPath;
 import net.sf.jode.bytecode.ClassInfo;
 import net.sf.jode.bytecode.TypeSignature;
+import net.sf.jode.decompiler.ClassDeclarer;
 import net.sf.jode.util.UnifyHash;
 
 ///#def COLLECTIONS java.util
-import java.util.Collections;
-import java.util.Map;
 import java.util.Iterator;
 import java.util.Arrays;
 ///#enddef
@@ -64,7 +63,6 @@ public class Type {
 
     private static final UnifyHash classHash = new UnifyHash();
     private static final UnifyHash arrayHash = new UnifyHash();    
-    private static final UnifyHash methodHash = new UnifyHash();    
 
     /**
      * This type represents the singleton set containing the boolean type.
@@ -193,23 +191,83 @@ public class Type {
      * Generate the singleton set of the type represented by the given
      * string.
      * @param classpath the current classpath.
-     * @param type the type signature (or method signature).  
+     * @param type the type signature (or method signature).
+     * @deprecated give a classdeclarer instead.  
      * @return a singleton set containing the given type.
      */
     public static final Type tType(ClassPath cp, String type) {
-	return tType(cp, type, Collections.EMPTY_MAP);
+	return tType(cp, null, type);
     }
 
     /**
      * Generate the singleton set of the type represented by the given
      * string.
-     * @param classpath the current classpath.
-     * @param signature the type signature (or method signature).  
-     * @param parameterMap the map from type variables to real types.
+     * @param declarer a class declarer for the current context.
+     * @param type the type signature (or method signature).
      * @return a singleton set containing the given type.
      */
-    public static final Type tType(ClassPath cp, String signature, 
-				   Map parameterMap) {
+    public static final Type tType(ClassDeclarer declarer, 
+	    			      String signature) {
+	return tType(declarer.getClassPath(), null, signature);
+    }
+    
+    public static final ClassInfoType tClassSig(ClassPath cp, ClassType declarer,
+	                                 	  String signature)
+    {
+	Type[] generics = null;
+	ClassInfoType outer = null; 
+	int index = signature.indexOf('.');
+        if (index >= 0) {
+            outer = tClassSig(cp, declarer, signature.substring(0, index));
+            signature = signature.substring(index+1);
+            if (outer == null)
+        	return null;
+        }
+	index = signature.indexOf('<');
+	if (index >= 0) {
+	    /* parse parameter types */
+	    String[] genericNames = TypeSignature
+		    .getArgumentTypes(signature.substring(index));
+	    signature = signature.substring(0, index);
+	    generics = new Type[genericNames.length];
+	    for (int i = 0; i < generics.length; i++) {
+		String name = genericNames[i];
+		char c = name.charAt(0);
+		if (c == '*')
+		    generics[i] = Type.tUObject;
+		else if (c == '+')
+		    generics[i] = Type.tType(cp, declarer, name.substring(1))
+		    	.getSubType();
+		else if (c == '-')
+		    generics[i] = Type.tType(cp, declarer, name.substring(1))
+		    	.getSuperType();
+		else
+		    generics[i] = Type.tType(cp, declarer, name);
+	    } 
+	}
+	if (outer != null) {
+	    ClassInfo[] inner = outer.getClassInfo().getClasses();
+	    for (int i = 0; i < inner.length; i++) {
+		if (inner[i].getClassName().equals(signature))
+		    return tClass(inner[i], generics, outer);
+	    }
+	    System.err.println("Inner class "+signature+" in class "+outer
+		               +" not found.");
+	    return null;
+	}
+	return tClass(cp, signature, generics);	
+    }
+    
+    /**
+     * Generate the singleton set of the type represented by the given
+     * string.
+     * @param cp current classpath.
+     * @param genericType the class containing generics of current context.
+     * @param type the type signature (or method signature).
+     * @return a singleton set containing the given type.
+     */
+    public static final Type tType(ClassPath cp, ClassType declarer, 
+	    			      String signature) {
         if (signature == null || signature.length() == 0)
             return tError;
         switch(signature.charAt(0)) {
@@ -232,41 +290,24 @@ public class Type {
         case 'V':
             return tVoid;
         case '[':
-            return tArray(tType(cp, signature.substring(1)));
+            return tArray(tType(cp, declarer, signature.substring(1)));
 	case 'L': {
             int endIndex = signature.length()-1;
-	    Type[] generics = null;
             if (signature.charAt(endIndex) != ';')
                 return tError;
-	    if (signature.charAt(endIndex-1) == '>') {
-		/* parse parameter types */
-		int index = signature.indexOf('<');
-		String[] genericNames = TypeSignature
-		    .getArgumentTypes(signature.substring(index, endIndex));
-		endIndex = index;
-		generics = new Type[genericNames.length];
-		for (int i = 0; i < generics.length; i++) {
-		    String name = genericNames[i];
-		    char c = name.charAt(0);
-		    if (c == '*')
-			generics[i] = Type.tUObject;
-		    else if (c == '+')
-			generics[i] = Type.tType(cp, name.substring(1))
-			    .getSubType();
-		    else if (c == '-')
-			generics[i] = Type.tType(cp, name.substring(1))
-			    .getSuperType();
-		    else
-			generics[i] = Type.tType(cp, name);
-		} 
-	    }
-            return tClass(cp, signature.substring(1, endIndex), generics);
+            Type type = tClassSig(cp, declarer, 
+        	    	     signature.substring(1, endIndex));
+            if (type == null)
+        	return tError;
+            return type;
 	}
 	case 'T': {
             int index = signature.indexOf(';');
             if (index != signature.length()-1)
                 return tError;
-	    Type type = (Type) parameterMap.get(signature.substring(1, index));
+            if (declarer == null)
+        	return tUnknown; /* XXX: Should be a type variable */
+	    Type type = declarer.getGeneric(signature.substring(1, index));
 	    if (type == null)
 		return tError;
 	    return type;
@@ -282,7 +323,7 @@ public class Type {
      * The packages may be separated by `.' or `/'.
      * @return a singleton set containing the given type.
      */
-    public static final ClassType tClass(ClassPath classPath,
+    public static final ClassInfoType tClass(ClassPath classPath,
 					 String className, 
 					 Type[] generics) {
 	return tClass(classPath.getClassInfo(className.replace('/','.')),
@@ -316,9 +357,12 @@ public class Type {
      * @param clazzinfo the net.sf.jode.bytecode.ClassInfo.
      * @return a singleton set containing the given type.
      */
-    public static final ClassType tClass(ClassInfo clazzinfo, 
-					 Type[] generics) {
+    public static final ClassInfoType tClass(ClassInfo clazzinfo, 
+					 Type[] generics, 
+					 ClassInfoType outer) {
 	int hash = clazzinfo.hashCode();
+	if (outer != null)
+	    hash = hash * 11 + outer.hashCode();
 	if (generics != null) {
 	    for (int i = 0; i < generics.length; i++)
 		hash = hash * 11 + generics[i].hashCode();
@@ -327,10 +371,11 @@ public class Type {
 	while (iter.hasNext()) {
 	    ClassInfoType type = (ClassInfoType) iter.next();
 	    if (type.getClassInfo() == clazzinfo
+		&& type.outerClass == outer
 		&& Arrays.equals(generics, type.genericInstances))
 		return type;
 	}
-	ClassInfoType type = new ClassInfoType(clazzinfo, generics);
+	ClassInfoType type = new ClassInfoType(clazzinfo, generics, outer);
 	classHash.put(hash, type);
         return type;
     }
@@ -340,9 +385,20 @@ public class Type {
      * class info.
      * @param clazzinfo the net.sf.jode.bytecode.ClassInfo.
      * @return a singleton set containing the given type.
+     */
+    public static final ClassInfoType tClass(ClassInfo clazzinfo, 
+					 Type[] generics) {
+        return tClass(clazzinfo, generics, null);
+    }
+
+    /**
+     * Generate the singleton set of the type represented by the given
+     * class info.
+     * @param clazzinfo the net.sf.jode.bytecode.ClassInfo.
+     * @return a singleton set containing the given type.
      * deprecated This should be removed if generics work.
      */
-    public static final ClassType tClass(ClassInfo clazzinfo) {
+    public static final ClassInfoType tClass(ClassInfo clazzinfo) {
 	return tClass(clazzinfo, null);
     }
 
@@ -370,21 +426,11 @@ public class Type {
 
     /**
      * Generate/look up the method type for the given signature 
-     * @param signature the method decriptor.
+     * @param signature the method descriptor.
      * @return a method type (a singleton set).
      */
-    public static MethodType tMethod(ClassPath cp, String signature) {
-	int hash = signature.hashCode() + cp.hashCode();
-	Iterator iter = methodHash.iterateHashCode(hash);
-	while (iter.hasNext()) {
-	    MethodType methodType = (MethodType) iter.next();
-	    if (methodType.getTypeSignature().equals(signature)
-		&& methodType.getClassPath().equals(cp))
-		return methodType;
-	}
-	MethodType methodType = new MethodType(cp, signature);
-	methodHash.put(hash, methodType);
-        return methodType;
+    public static MethodType tMethod(ClassPath cp, ClassType declarer, String signature) {
+	return new MethodType(cp, declarer, signature);
     }
 
     /**

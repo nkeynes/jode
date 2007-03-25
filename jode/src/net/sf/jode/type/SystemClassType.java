@@ -43,7 +43,7 @@ public class SystemClassType extends ClassType {
 			   ClassType superType, 
 			   ClassType[] ifacesTypes,
 			   boolean isFinal, boolean isInterface) {
-	super(TC_SYSCLASS, className);
+	super(TC_SYSCLASS, className, null);
 	this.superType = superType;
 	this.ifacesTypes = ifacesTypes;
 	this.isFinal = isFinal;
