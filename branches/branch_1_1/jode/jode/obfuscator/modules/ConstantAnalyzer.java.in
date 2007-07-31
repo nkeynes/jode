@@ -528,7 +528,7 @@ public class ConstantAnalyzer extends SimpleAnalyzer
 	    i++;
 	if (i < clName.length() && clName.charAt(i) == 'L') {
 	    clName = clName.substring(i+1, clName.length()-1);
-	    Main.getClassBundle().reachableClass(clName);
+	    Main.getClassBundle().reachableClass(clName.replace('/','.'));
 	}
     }
 

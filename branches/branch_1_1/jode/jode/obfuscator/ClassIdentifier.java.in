@@ -639,6 +639,10 @@ public class ClassIdentifier extends Identifier {
     public void doTransformations() {
 	if (GlobalOptions.verboseLevel > 0)
 	    GlobalOptions.err.println("Transforming "+this);
+	/* Drop unknown attributes.  
+	 * They may be broken now anyway due to renaming.
+	 */
+ 	info.dropInfo(BinaryInfo.UNKNOWNATTRIBS);
 	info.setName(getFullAlias());
 	transformSuperIfaces();
 	transformInnerClasses();
@@ -663,10 +667,6 @@ public class ClassIdentifier extends Identifier {
 	    }
 	}
 
-	/* Drop unknown attributes.  
-	 * They may be broken now anyway due to renaming.
-	 */
- 	info.dropInfo(info.UNKNOWN_ATTRIBUTES);
 	info.setFields((FieldInfo[]) newFields.toArray
 		       (new FieldInfo[newFields.size()]));
 	info.setMethods((MethodInfo[]) newMethods.toArray
