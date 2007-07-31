@@ -211,94 +211,98 @@ public class BytecodeInfo extends BinaryInfo implements Opcodes {
     protected void readAttribute(String name, int length, ConstantPool cp,
 				 DataInputStream input, 
 				 int howMuch) throws IOException {
-	if ((howMuch & KNOWNATTRIBS) != 0 
-	    && name.equals("LocalVariableTable")) {
-	    if ((GlobalOptions.debuggingFlags & GlobalOptions.DEBUG_LVT) != 0) 
-		GlobalOptions.err.println("LocalVariableTable of "+methodInfo);
-            int count = input.readUnsignedShort();
-	    if (length != 2 + count * 10) {
+	if (name.equals("LocalVariableTable")) {
+	    if ((howMuch & KNOWNATTRIBS) != 0){
 		if ((GlobalOptions.debuggingFlags & GlobalOptions.DEBUG_LVT) != 0) 
-		    GlobalOptions.err.println("Illegal LVT length, ignoring it");
-		return;
-	    }
-	    lvt = new LocalVariableInfo[count];
-            for (int i=0; i < count; i++) {
-		lvt[i] = new LocalVariableInfo();
-                int start  = input.readUnsignedShort();
-                int end    = start + input.readUnsignedShort();
-		int nameIndex = input.readUnsignedShort();
-		int typeIndex = input.readUnsignedShort();
-		int slot = input.readUnsignedShort();
-		Instruction startInstr = 
-		    start >= 0 && start < instrs.length ? instrs[start] : null;
-		Instruction endInstr;
-		if (end >=0 && end < instrs.length)
-		    endInstr = instrs[end] == null ? null
-			: instrs[end].getPrevByAddr();
-		else {
-		    endInstr = null;
-		    for (int nr = instrs.length - 1; nr >= 0; nr--) {
-			if (instrs[nr] != null) {
-			    if (instrs[nr].getNextAddr() == end)
-				endInstr = instrs[nr];
-			    break;
+		    GlobalOptions.err.println("LocalVariableTable of "+methodInfo);
+		int count = input.readUnsignedShort();
+		if (length != 2 + count * 10) {
+		    if ((GlobalOptions.debuggingFlags & GlobalOptions.DEBUG_LVT) != 0) 
+			GlobalOptions.err.println("Illegal LVT length, ignoring it");
+		    return;
+		}
+		lvt = new LocalVariableInfo[count];
+		for (int i=0; i < count; i++) {
+		    lvt[i] = new LocalVariableInfo();
+		    int start  = input.readUnsignedShort();
+		    int end    = start + input.readUnsignedShort();
+		    int nameIndex = input.readUnsignedShort();
+		    int typeIndex = input.readUnsignedShort();
+		    int slot = input.readUnsignedShort();
+		    Instruction startInstr = 
+			start >= 0 && start < instrs.length ? instrs[start] : null;
+		    Instruction endInstr;
+		    if (end >=0 && end < instrs.length)
+			endInstr = instrs[end] == null ? null
+			    : instrs[end].getPrevByAddr();
+		    else {
+			endInstr = null;
+			for (int nr = instrs.length - 1; nr >= 0; nr--) {
+			    if (instrs[nr] != null) {
+				if (instrs[nr].getNextAddr() == end)
+				    endInstr = instrs[nr];
+				break;
+			    }
 			}
 		    }
-		}
-
-		if (startInstr == null
-		    || endInstr == null
-		    || nameIndex == 0 || typeIndex == 0
-		    || slot >= maxLocals
-		    || cp.getTag(nameIndex) != cp.UTF8
-		    || cp.getTag(typeIndex) != cp.UTF8) {
-
-		    // This is probably an evil lvt as created by HashJava
-		    // simply ignore it.
-		    if ((GlobalOptions.debuggingFlags
-			 & GlobalOptions.DEBUG_LVT) != 0) 
-			GlobalOptions.err.println
+		    
+		    if (startInstr == null
+			|| endInstr == null
+			|| nameIndex == 0 || typeIndex == 0
+			|| slot >= maxLocals
+			|| cp.getTag(nameIndex) != cp.UTF8
+			|| cp.getTag(typeIndex) != cp.UTF8) {
+			
+			// This is probably an evil lvt as created by HashJava
+			// simply ignore it.
+			if ((GlobalOptions.debuggingFlags
+			     & GlobalOptions.DEBUG_LVT) != 0) 
+			    GlobalOptions.err.println
 			    ("Illegal entry, ignoring LVT");
-		    lvt = null;
-		    return;
+			lvt = null;
+			return;
+		    }
+		    lvt[i].start = startInstr;
+		    lvt[i].end = endInstr;
+		    lvt[i].name = cp.getUTF8(nameIndex);
+		    lvt[i].type = cp.getUTF8(typeIndex);
+		    lvt[i].slot = slot;
+		    if ((GlobalOptions.debuggingFlags & GlobalOptions.DEBUG_LVT) != 0)
+			GlobalOptions.err.println("\t" + lvt[i].name + ": "
+						  + lvt[i].type
+						  +" range "+start+" - "+end
+						  +" slot "+slot);
 		}
-		lvt[i].start = startInstr;
-		lvt[i].end = endInstr;
-		lvt[i].name = cp.getUTF8(nameIndex);
-                lvt[i].type = cp.getUTF8(typeIndex);
-                lvt[i].slot = slot;
-                if ((GlobalOptions.debuggingFlags & GlobalOptions.DEBUG_LVT) != 0)
-                    GlobalOptions.err.println("\t" + lvt[i].name + ": "
-					   + lvt[i].type
-					   +" range "+start+" - "+end
-					   +" slot "+slot);
-            }
-	} else if ((howMuch & KNOWNATTRIBS) != 0 
-		   && name.equals("LineNumberTable")) {
-	    int count = input.readUnsignedShort();
-	    if (length != 2 + count * 4) {
-		GlobalOptions.err.println
-		    ("Illegal LineNumberTable, ignoring it");
-		return;
-	    }
-	    lnt = new LineNumber[count];
-	    for (int i = 0; i < count; i++) {
-		lnt[i] = new LineNumber();
-		int start = input.readUnsignedShort();
-		Instruction startInstr = instrs[start];
-		if (startInstr == null) {
+	    } else
+		input.readFully(new byte[length]);
+	} else if (name.equals("LineNumberTable")) {
+	    if ((howMuch & KNOWNATTRIBS) != 0) {
+		int count = input.readUnsignedShort();
+		if (length != 2 + count * 4) {
 		    GlobalOptions.err.println
-			("Illegal entry, ignoring LineNumberTable table");
-		    lnt = null;
+			("Illegal LineNumberTable, ignoring it");
 		    return;
 		}
-		lnt[i].start = startInstr;
-		lnt[i].linenr = input.readUnsignedShort();
-	    }
+		lnt = new LineNumber[count];
+		for (int i = 0; i < count; i++) {
+		    lnt[i] = new LineNumber();
+		    int start = input.readUnsignedShort();
+		    Instruction startInstr = instrs[start];
+		    if (startInstr == null) {
+			GlobalOptions.err.println
+			    ("Illegal entry, ignoring LineNumberTable table");
+			lnt = null;
+		    return;
+		    }
+		    lnt[i].start = startInstr;
+		    lnt[i].linenr = input.readUnsignedShort();
+		}
+	    } else
+		input.readFully(new byte[length]);
 	} else
 	    super.readAttribute(name, length, cp, input, howMuch);
     }
-
+	
     public void read(ConstantPool cp, 
 		     DataInputStream input) throws IOException {
         maxStack = input.readUnsignedShort();

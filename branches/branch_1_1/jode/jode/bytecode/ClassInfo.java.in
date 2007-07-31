@@ -168,111 +168,116 @@ public class ClassInfo extends BinaryInfo {
 				 ConstantPool cp,
 				 DataInputStream input, 
 				 int howMuch) throws IOException {
-	if ((howMuch & KNOWNATTRIBS) != 0 && name.equals("SourceFile")) {
-	    if (length != 2)
-		throw new ClassFormatException("SourceFile attribute"
-					       + " has wrong length");
-	    sourceFile = cp.getUTF8(input.readUnsignedShort());
-	} else if ((howMuch & (OUTERCLASSES | INNERCLASSES)) != 0
-		   && name.equals("InnerClasses")) {
-	    int count = input.readUnsignedShort();
-	    if (length != 2 + 8 * count)
+	if (name.equals("SourceFile")) {
+	    if ((howMuch & KNOWNATTRIBS) != 0) {
+		if (length != 2)
+		    throw new ClassFormatException("SourceFile attribute"
+						   + " has wrong length");
+		sourceFile = cp.getUTF8(input.readUnsignedShort());
+	    } else
+		input.readFully(new byte[length]);
+	} else if (name.equals("InnerClasses")) {
+	    if ((howMuch & (OUTERCLASSES | INNERCLASSES)) != 0) {
+		int count = input.readUnsignedShort();
+		if (length != 2 + 8 * count)
 		throw new ClassFormatException
 		    ("InnerClasses attribute has wrong length");
-	    int innerCount = 0, outerCount = 0, extraCount = 0;
-	    InnerClassInfo[] innerClassInfo = new InnerClassInfo[count];
-	    for (int i=0; i< count; i++) {
-		int innerIndex = input.readUnsignedShort();
-		int outerIndex = input.readUnsignedShort();
-		int nameIndex = input.readUnsignedShort();
-		String inner = cp.getClassName(innerIndex);
-		String outer = 
-		    outerIndex != 0 ? cp.getClassName(outerIndex) : null;
-		String innername = 
-		    nameIndex != 0 ? cp.getUTF8(nameIndex) : null;
-		int access = input.readUnsignedShort();
-		if (innername != null && innername.length() == 0)
-		    innername = null;
-
-		/* Some compilers give method scope classes a valid
-		 * outer field, but we mustn't handle them as inner
-		 * classes.  The best way to distinguish this case 
-		 * is by the class name.
+		int innerCount = 0, outerCount = 0, extraCount = 0;
+		InnerClassInfo[] innerClassInfo = new InnerClassInfo[count];
+		for (int i=0; i< count; i++) {
+		    int innerIndex = input.readUnsignedShort();
+		    int outerIndex = input.readUnsignedShort();
+		    int nameIndex = input.readUnsignedShort();
+		    String inner = cp.getClassName(innerIndex);
+		    String outer = 
+			outerIndex != 0 ? cp.getClassName(outerIndex) : null;
+		    String innername = 
+			nameIndex != 0 ? cp.getUTF8(nameIndex) : null;
+		    int access = input.readUnsignedShort();
+		    if (innername != null && innername.length() == 0)
+			innername = null;
+		    
+		    /* Some compilers give method scope classes a valid
+		     * outer field, but we mustn't handle them as inner
+		     * classes.  The best way to distinguish this case 
+		     * is by the class name.
+		     */
+		    if (outer != null && innername != null
+			&& inner.length() > outer.length() + 2 + innername.length()
+			&& inner.startsWith(outer+"$") 
+			&& inner.endsWith("$"+innername)
+			&& Character.isDigit(inner.charAt(outer.length() + 1)))
+			outer = null;
+		    
+		    InnerClassInfo ici = new InnerClassInfo 
+			(inner, outer, innername, access);
+		    
+		    if (outer != null && outer.equals(getName()) 
+			&& innername != null)
+			innerClassInfo[innerCount++] = ici;
+		    else
+			innerClassInfo[count - (++extraCount)] = ici;
+		}
+		/* Now innerClasses are at the front of innerClassInfo array
+		 * in correct order.  The other InnerClassInfos are in reverse
+		 * order in the rest of the innerClassInfo array.
 		 */
-		if (outer != null && innername != null
-		    && inner.length() > outer.length() + 2 + innername.length()
-		    && inner.startsWith(outer+"$") 
-		    && inner.endsWith("$"+innername)
-		    && Character.isDigit(inner.charAt(outer.length() + 1)))
-		    outer = null;
-
-		InnerClassInfo ici = new InnerClassInfo 
-		    (inner, outer, innername, access);
-
-		if (outer != null && outer.equals(getName()) 
-		    && innername != null)
-		    innerClassInfo[innerCount++] = ici;
-		else
-		    innerClassInfo[count - (++extraCount)] = ici;
-	    }
-	    /* Now innerClasses are at the front of innerClassInfo array
-	     * in correct order.  The other InnerClassInfos are in reverse
-	     * order in the rest of the innerClassInfo array.
-	     */
-	    
-	    /* We now count the outerClasses.  The reverse order is the
-	     * right thing for us.
-	     */
-	    {
-		String lastOuterName = getName();
-		for (int i = count - extraCount; 
-		     i < count && lastOuterName != null; i++) {
-		    InnerClassInfo ici = innerClassInfo[i];
-		    if (ici.inner.equals(lastOuterName)) {
-			outerCount++;
-			extraCount--;
-			lastOuterName = ici.outer;
+		
+		/* We now count the outerClasses.  The reverse order is the
+		 * right thing for us.
+		 */
+		{
+		    String lastOuterName = getName();
+		    for (int i = count - extraCount; 
+			 i < count && lastOuterName != null; i++) {
+			InnerClassInfo ici = innerClassInfo[i];
+			if (ici.inner.equals(lastOuterName)) {
+			    outerCount++;
+			    extraCount--;
+			    lastOuterName = ici.outer;
+			}
 		    }
 		}
-	    }
-	    if (innerCount > 0) {
-		innerClasses = new InnerClassInfo[innerCount];
-		System.arraycopy(innerClassInfo, 0, 
-				 innerClasses, 0, innerCount);
-	    } else
-		innerClasses = null;
+		if (innerCount > 0) {
+		    innerClasses = new InnerClassInfo[innerCount];
+		    System.arraycopy(innerClassInfo, 0, 
+				     innerClasses, 0, innerCount);
+		} else
+		    innerClasses = null;
 
-	    if (outerCount > 0) {
-		outerClasses = new InnerClassInfo[outerCount];
-	    } else 
-		outerClasses = null;
-
-	    if (extraCount > 0) {
-		extraClasses = new InnerClassInfo[extraCount];
-	    } else
-		extraClasses = null;
-	    
-	    /* The last part:  We split between outer and extra classes.
-	     * In this step we will also revert the order of the extra
-	     * classes.
-	     */
-	    {
-		int outerPtr = 0;
-		String lastOuterName = getName();
-		for (int i = count - extraCount - outerCount; 
-		     i < count; i++) {
-		    InnerClassInfo ici = innerClassInfo[i];
-
-		    /* If we counted correctly there is no NullPointer
-		     * or ArrayIndexOutOfBoundsException here 
-		     */
-		    if (ici.inner.equals(lastOuterName)) {
-			outerClasses[outerPtr++] = ici;
-			lastOuterName = ici.outer;
-		    } else
-			extraClasses[--extraCount] = ici;
+		if (outerCount > 0) {
+		    outerClasses = new InnerClassInfo[outerCount];
+		} else 
+		    outerClasses = null;
+		
+		if (extraCount > 0) {
+		    extraClasses = new InnerClassInfo[extraCount];
+		} else
+		    extraClasses = null;
+		
+		/* The last part:  We split between outer and extra classes.
+		 * In this step we will also revert the order of the extra
+		 * classes.
+		 */
+		{
+		    int outerPtr = 0;
+		    String lastOuterName = getName();
+		    for (int i = count - extraCount - outerCount; 
+			 i < count; i++) {
+			InnerClassInfo ici = innerClassInfo[i];
+			
+			/* If we counted correctly there is no NullPointer
+			 * or ArrayIndexOutOfBoundsException here 
+			 */
+			if (ici.inner.equals(lastOuterName)) {
+			    outerClasses[outerPtr++] = ici;
+			    lastOuterName = ici.outer;
+			} else
+			    extraClasses[--extraCount] = ici;
+		    }
 		}
-	    }
+	    } else
+		input.readFully(new byte[length]);
 	} else if (name.equals("Deprecated")) {
 	    deprecatedFlag = true;
 	    if (length != 0)

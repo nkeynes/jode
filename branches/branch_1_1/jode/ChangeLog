@@ -1,3 +1,21 @@
+2007-07-31  Jochen Hoenicke  <hoenicke@gmail.com>
+
+	* jode/bytecode/ClassInfo.java.in:
+	(readAttribute): Never read in known attributes as unknown 
+	attributes.  This could happen before when class was first read with
+	known info and then again with all info.
+	* jode/bytecode/MethodInfo.java: (readAttribute): Likewise.
+	* jode/bytecode/FieldInfo.java: (readAttribute): Likewise.
+	* jode/bytecode/BytecodeInfo.java.in: (readAttribute): Likewise.
+
+	* jode/obfuscator/ClassIdentifier.java: (doTransformation): Remove
+	all unknown attributes.  They may contain references to
+	nonexisting constant pool entries.
+
+	* jode/obfuscator/PackageIdentifier.java: (loadClass): Fix a
+	compile time bug in the last patch.
+
+
 2005-09-13  Jochen Hoenicke  <jochen@gnu.org>
 
 	Check for NullPointer in SyntheticAnalyzer.  Based on

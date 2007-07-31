@@ -102,7 +102,7 @@ public class PackageIdentifier extends Identifier {
 		    loadedClasses.put(subclazz, ident);
 		    swappedClasses = null;
 		    bundle.addClassIdentifier(ident);
-		    ((ClassIdentifier) ident).initClass();
+		    ident.initClass();
 		}
 	    }
 	    // Everything is loaded, we don't need to load on demand anymore.
@@ -131,7 +131,7 @@ public class PackageIdentifier extends Identifier {
     public ClassIdentifier loadClass(String name) {
 	int index = name.indexOf('.');
 	if (index == -1) {
-	    ClassIdentifier ident = (Identifier) loadedClasses.get(name);
+	    ClassIdentifier ident = (ClassIdentifier) loadedClasses.get(name);
 	    if (ident == null) {
 		String subFull = 
 		   (fullName.length() > 0) ? fullName + "."+ name : name;
@@ -156,7 +156,7 @@ public class PackageIdentifier extends Identifier {
 		    loadedClasses.put(name, ident);
 		    swappedClasses = null;
 		    bundle.addClassIdentifier(ident);
-		    ((ClassIdentifier) ident).initClass();
+		    ident.initClass();
 		}
 	    }
 	    return ident;

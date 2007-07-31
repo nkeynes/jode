@@ -663,6 +663,10 @@ public class ClassIdentifier extends Identifier {
 	    }
 	}
 
+	/* Drop unknown attributes.  
+	 * They may be broken now anyway due to renaming.
+	 */
+ 	info.dropInfo(info.UNKNOWN_ATTRIBUTES);
 	info.setFields((FieldInfo[]) newFields.toArray
 		       (new FieldInfo[newFields.size()]));
 	info.setMethods((MethodInfo[]) newMethods.toArray

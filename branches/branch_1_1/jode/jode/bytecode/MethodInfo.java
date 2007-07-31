@@ -51,9 +51,12 @@ public class MethodInfo extends BinaryInfo {
     protected void readAttribute(String name, int length, ConstantPool cp,
 				 DataInputStream input, 
 				 int howMuch) throws IOException {
-	if ((howMuch & KNOWNATTRIBS) != 0 && name.equals("Code")) {
-	    bytecode = new BytecodeInfo(this);
-	    bytecode.read(cp, input);
+	if (name.equals("Code")) {
+	    if ((howMuch & KNOWNATTRIBS) != 0) {
+		bytecode = new BytecodeInfo(this);
+		bytecode.read(cp, input);
+	    } else
+		input.readFully(new byte[length]);
 	} else if (name.equals("Exceptions")) {
 	    int count = input.readUnsignedShort();
 	    exceptions = new String[count];
