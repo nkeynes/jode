@@ -280,6 +280,7 @@ public final class Block {
 	    if (succs[succs.length-1] == null)
 		output.println("\treturn");
 	    else
+
 		output.println("\tgoto "+succs[succs.length-1]);
 	}
     }

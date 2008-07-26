@@ -247,7 +247,7 @@ public class MethodAnalyzer implements Scope, ClassDeclarer {
 	    }
 	}
 
-        this.methodType = Type.tMethod(cla.getClassPath(), cla.getType(), signature);
+        this.methodType = Type.tMethod(cla.getClassPath(), cla.getType(), signature, genericTypes);
         this.isConstructor = 
             methodName.equals("<init>") || methodName.equals("<clinit>");
         
