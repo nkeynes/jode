@@ -44,7 +44,7 @@ public class ClassInfoType extends ClassType {
     }
 
     public ClassInfoType(ClassInfo clazz, Type[] generics, 
-	    		 ClassType outerClass) {
+	    		 GenericDeclarer outerClass) {
         super(TC_CLASS, clazz.getName(), outerClass);
 	
 	this.clazz = clazz;
@@ -68,7 +68,6 @@ public class ClassInfoType extends ClassType {
 	}
 
 	genericInstances = generics;
-	Map genericMap = new SimpleMap();
 	if (generics != null) {
 	    /* parse generic names */
 	    genericNames = TypeSignature.getGenericNames(signature);

@@ -155,8 +155,9 @@ public final class InvokeOperator extends Operator
         super(Type.tUnknown, 0);
 	this.classPath = methodAnalyzer.getClassAnalyzer().getClassPath();
 	this.ref = reference;
+	//TODO: generics
         this.methodType = Type.tMethod(methodAnalyzer.getClassPath(), 
-        	                       null, reference.getType());
+        	                       null, reference.getType(), null);
         this.methodName = reference.getName();
         this.classType = (ClassType) 
 	    Type.tType(methodAnalyzer.getClassPath(), null, reference.getClazz());
@@ -774,8 +775,10 @@ public final class InvokeOperator extends Operator
 		    /* method name doesn't match*/
 		    continue next_method;
 
+		// TODO Generics
 		Type[] otherParamTypes
-		    = Type.tMethod(methodAnalyzer.getClassPath(), null, methods[i].getSignature())
+		    = Type.tMethod(methodAnalyzer.getClassPath(), null, 
+			    	   methods[i].getSignature(), null)
 		    .getParameterTypes();
 		if (otherParamTypes.length != myParamTypes.length) {
 		    /* parameter count doesn't match*/

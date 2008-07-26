@@ -26,20 +26,26 @@ import java.util.Stack;
  *
  * @author Jochen Hoenicke 
  */
-public abstract class ClassType extends ReferenceType {
+public abstract class ClassType extends ReferenceType implements GenericDeclarer {
     /**
      * The full qualified class name in java syntax.
      */
     protected String className;
     protected String[] genericNames;
     protected Type[]   genericInstances;
-    protected ClassType outerClass;
+    protected GenericDeclarer outerClass;
 
     /*
      * @invariant (genericNames == null) == (genericInstances == null)
      * @invariant (genericNames != null) ==> 
      *                (genericNames.length == genericInstances.length)
      */
+
+    public ClassType(int typecode, String clazzName, GenericDeclarer outerClass) {
+	super(typecode);
+	className = clazzName;
+	this.outerClass = outerClass;
+    }
 
     public String getClassName() {
 	return className;
@@ -54,12 +60,6 @@ public abstract class ClassType extends ReferenceType {
 	if (outerClass != null)
 	    return outerClass.getGeneric(name);
 	return null;
-    }
-
-    public ClassType(int typecode, String clazzName, ClassType outerClass) {
-	super(typecode);
-	className = clazzName;
-	this.outerClass = outerClass;
     }
 
     public ClassType(int typecode, String clazzName, 

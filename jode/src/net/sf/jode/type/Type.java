@@ -211,7 +211,7 @@ public class Type {
 	return tType(declarer.getClassPath(), null, signature);
     }
     
-    public static final ClassInfoType tClassSig(ClassPath cp, ClassType declarer,
+    public static final ClassInfoType tClassSig(ClassPath cp, GenericDeclarer declarer,
 	                                 	  String signature)
     {
 	Type[] generics = null;
@@ -266,7 +266,7 @@ public class Type {
      * @param type the type signature (or method signature).
      * @return a singleton set containing the given type.
      */
-    public static final Type tType(ClassPath cp, ClassType declarer, 
+    public static final Type tType(ClassPath cp, GenericDeclarer declarer, 
 	    			      String signature) {
         if (signature == null || signature.length() == 0)
             return tError;
@@ -429,8 +429,9 @@ public class Type {
      * @param signature the method descriptor.
      * @return a method type (a singleton set).
      */
-    public static MethodType tMethod(ClassPath cp, ClassType declarer, String signature) {
-	return new MethodType(cp, declarer, signature);
+    public static MethodType tMethod(ClassPath cp, GenericDeclarer declarer, 
+	    String signature, Type[] generics) {
+	return new MethodType(cp, declarer, signature, generics);
     }
 
     /**
